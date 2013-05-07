@@ -1,0 +1,27 @@
+# TODO document all available Mail gem delivery options in comments
+#
+# delivery_method: smtp
+# address: smtp.myisp.com
+# port: 25
+# domain: your.host.name
+# user_name: login_name
+# password: password
+# authentication: plain
+# enable_starttls_auto: true
+# openssl_verify_mode: none
+# ssl: true/false
+# tls: true/false
+
+# TODO add defaults for to, from, subject
+
+delivery_method: smtp
+address: smtp.myhost.net
+port: 25
+domain: mycompany.com
+user_name: myname
+password: mypassword
+authentication: plain
+enable_starttls_auto: false
+openssl_verify_mode: none
+tls: false
+ssl: false
