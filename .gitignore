@@ -2,9 +2,12 @@
 *.rbc
 .bundle
 .config
+.DS_Store
 coverage
+db/*.sqlite3
 InstalledFiles
 lib/bundler/man
+log
 pkg
 rdoc
 spec/reports
