@@ -3,6 +3,7 @@
 .bundle
 .config
 .DS_Store
+.idea
 coverage
 db/*.sqlite3
 InstalledFiles
