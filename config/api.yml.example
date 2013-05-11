@@ -1,4 +1,17 @@
-api_base_url: http://localhost:3000/api
-api_version: v1
-api_key: ab9c5d86dd28753c3d0edf78c05761f2
-private_key: 3bbb3da489d4f8bd023ad2e2d16692b8
+development:
+  api_base_url: http://localhost:3000/api
+  api_version: v1
+  api_key: ab9c5d86dd28753c3d0edf78c05761f2
+  private_key: 3bbb3da489d4f8bd023ad2e2d16692b8
+
+test:
+  api_base_url: http://localhost:3000/api
+  api_version: v1
+  api_key: ab9c5d86dd28753c3d0edf78c05761f2
+  private_key: 3bbb3da489d4f8bd023ad2e2d16692b8
+
+production:
+  api_base_url: http://localhost:3000/api
+  api_version: v1
+  api_key: ab9c5d86dd28753c3d0edf78c05761f2
+  private_key: 3bbb3da489d4f8bd023ad2e2d16692b8

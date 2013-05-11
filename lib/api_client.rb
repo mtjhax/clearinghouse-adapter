@@ -20,7 +20,7 @@ class ApiClient
     version = @options.delete(:api_version)
     @version = version.is_a?(String) ? version : "v#{ version || 1 }"
     @api_key = @options.delete(:api_key)
-    @private_key = @options.delete(:private_key)
+    @private_key = @options.delete(:api_private_key)
 
     @base_resource_path = nil
     @data_attributes = {}

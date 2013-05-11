@@ -4,6 +4,10 @@
 .config
 .DS_Store
 .idea
+.rvmrc
+.ruby-version
+.ruby-gemset
+config/*.yml
 coverage
 db/*.sqlite3
 InstalledFiles

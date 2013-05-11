@@ -1,0 +1,3 @@
+import:
+  new_folder: tmp/import
+  done_folder: tmp/import_done
