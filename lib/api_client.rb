@@ -3,6 +3,7 @@ require 'api_param_factory'
 require 'yaml'
 require 'json'
 require 'active_support/core_ext/hash/indifferent_access'
+require 'active_support/inflector'
 
 class ApiClient
 
@@ -28,8 +29,15 @@ class ApiClient
   end
 
   # REST-style request methods
-  # returned objects are instances of this class and can be used to request nested objects
-  # e.g. results returned by GET trip_tickets can be used to GET trip_ticket_comments
+  #
+  # unless raw:true option is used, returned objects are instances of this class and can be used to request
+  # nested objects, e.g. results returned by get('trip_tickets/1').get('trip_ticket_comments')
+  #
+  # resources can be:
+  # symbols:        :trip_tickets
+  # strings:        "trip_tickets/1/trip_comments"
+  # arrays:         ['trip_tickets', 1, :trip_comments]
+  # nested arrays:  ['trip_tickets', 1, [:trip_comments, 2]]
 
   def get(resource, additional_params = {})
     request(:get, resource, additional_params)
@@ -65,8 +73,14 @@ class ApiClient
 
   def request(method, resource, additional_params = nil)
     resource = flatten([@base_resource_path, resource])
-    params = method == :get ? { params: signed_params(additional_params) } : signed_params(additional_params)
-    result = @site[versioned(resource)].send(method, params)
+    resource_name = singular_resource_name(resource)
+    params = signed_params({ resource_name => additional_params })
+    params = { params: params } if method == :get
+    result = begin
+      @site[versioned(resource)].send(method, params)
+    rescue => e
+      e.response
+    end
     process_result(resource, result)
   end
 
@@ -75,6 +89,7 @@ class ApiClient
     if @options[:raw]
       result
     else
+      # convert array of raw results into an array of dups of the current object with result data stored
       result = [result] unless result.is_a?(Array)
       result.map {|r| self.dup.tap {|dup| dup.set_attributes(resource, r) }}
     end
@@ -90,15 +105,19 @@ class ApiClient
   end
 
   def flatten(resource)
-    case resource
-      when Array
-        flattened = resource.compact.each do |r|
-          flatten(r)
-        end
-        flattened.join('/')
-      else
-        resource
+    if resource.is_a?(Array)
+      flattened = resource.compact.map {|r| flatten(r) }
+      flattened.join('/')
+    else
+      resource
     end
+  end
+
+  def singular_resource_name(resource_path)
+    # returns type of resource being accessed from its path
+    # e.g. given 'trip_tickets/1/trip_ticket_comments/2' it should return 'trip_ticket_comment'
+    match = resource_path.match(/\/?([A-Za-z_-]+)[^A-Za-z_-]*$/)
+    match[1].singularize if match
   end
 
   def nonce
