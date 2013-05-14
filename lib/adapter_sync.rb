@@ -5,11 +5,11 @@ require 'active_record'
 require 'yaml'
 require 'rbconfig'
 require 'logger'
-require 'csv'
 require 'active_support/core_ext/hash/indifferent_access'
 
 require 'api_client'
 require 'active_record_connection'
+require 'import'
 
 model_dir = File.join(File.dirname(__FILE__), 'model')
 $LOAD_PATH.unshift(model_dir)
@@ -40,32 +40,16 @@ begin
   apiconfig['raw'] = false
   clearinghouse = ApiClient.new(apiconfig)
 
-  # check designated folder for tickets to import
-  # TODO need to refactor this import into a method or module to keep the main sync logic clean
-  import_dir = options[:import][:new_folder]
-  if import_dir.nil?
-    logger.info "Import folder not configured, will not check for files to import"
-  elsif Dir[import_dir].empty?
-    logger.info "Import folder #{import_dir} does not exist, will not check for files to import"
-  else
-    logger.info "Checking folder #{File.expand_path(import_dir)} for files to import"
-    import_files = Dir[File.join(File.expand_path(import_dir), "*.{txt,csv}")]
-    logger.info "Found #{import_files.length} files to import"
-    import_files.each do |file|
-      logger.info "Importing #{file}"
-      # TODO capture exceptions, particularly CSV::MalformedCSVError
-      CSV.foreach(file, headers: true, return_headers: false) do |row|
-        values = Hash[row.headers.zip(row.fields)]
-        logger.info "Row: #{values}"
-        begin
-          # TODO allow API to throw exceptions on server error responses or force it to return a result?
-          # TODO we need to cleanly handle when we post a trip ticket that already exists
-          result = clearinghouse.post(:trip_tickets, values)
-          logger.info "Posted trip ticket to API, result #{result}"
-        rescue Exception => e
-          logger.error "Row error: " << e.message
-        end
-      end
+  importer = Import.new(logger)
+  importer.import_folder(options[:import][:new_folder]) do |row|
+    begin
+      # TODO allow API to throw exceptions on server error responses or force it to return a result?
+      # TODO we need to cleanly handle when we post a trip ticket that already exists
+      # TODO report errors to monitor in case they require a notification to user (handle notifications in one place?)
+      result = clearinghouse.post(:trip_tickets, row)
+      logger.info "Posted trip ticket to API, result #{result}"
+    rescue Exception => e
+      logger.error "Row error: " << e.message
     end
   end
 
