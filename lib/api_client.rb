@@ -76,11 +76,8 @@ class ApiClient
     resource_name = singular_resource_name(resource)
     params = signed_params({ resource_name => additional_params })
     params = { params: params } if method == :get
-    result = begin
-      @site[versioned(resource)].send(method, params)
-    rescue => e
-      e.response
-    end
+    result = @site[versioned(resource)].send(method, params)
+    # TODO consider rescuing RestClient exceptions and JSON-parsing e.response
     process_result(resource, result)
   end
 
@@ -97,7 +94,7 @@ class ApiClient
 
   def set_attributes(resource_path, attributes)
     @base_resource_path = resource_path + (attributes['id'].blank? ? "" : "/#{attributes['id']}")
-    @data_attributes = attributes
+    @data_attributes = attributes.with_indifferent_access
   end
 
   def versioned(resource)

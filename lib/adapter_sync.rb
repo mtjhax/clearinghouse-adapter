@@ -21,75 +21,108 @@ API_CONFIG_FILE = File.expand_path(File.join('..', 'config', 'api.yml'), File.di
 DB_CONFIG_FILE = File.expand_path(File.join('..', 'config', 'database.yml'), File.dirname(__FILE__))
 MIGRATIONS_DIR = File.expand_path(File.join('..', 'db', 'migrations'), File.dirname(__FILE__))
 
-def load_config(file)
-  (YAML::load(File.open(file)) || {}).with_indifferent_access
-end
+class AdapterSync
+
+  def initialize
+    @logger = Logger.new(LOG_FILE, 'weekly')
+    @options = load_config(CONFIG_FILE)
+
+    # open the database, creating it if necessary, and make sure up to date with latest migrations
+    # TODO need a global environment setting like Rails.env
+    @connection = ActiveRecordConnection.new(@logger, load_config(DB_CONFIG_FILE)[:development])
+    @connection.migrate(MIGRATIONS_DIR)
+
+    # create connection to the Clearinghouse API
+    apiconfig = load_config(API_CONFIG_FILE)[:development]
+    apiconfig['raw'] = false
+    @clearinghouse = ApiClient.new(apiconfig)
+  end
+
+  def poll
+    # check for tickets in a CSV file to import
+    import_tickets if @options[:import][:enabled]
 
 
-begin
-  logger = Logger.new(LOG_FILE, 'weekly')
-  options = load_config(CONFIG_FILE)
+    # TODO adapter polls local system for new/modified tickets, pushes new tickets/changes
+    #
+    # How do we know which tickets and changes are new? Local cache or marked in database? We should try to avoid
+    # stashing Adapter-specific information in the provider system database because we don't really have control
+    # over it, so we will stash them locally, only after successful push.
+    #
+    # If possible, mark the ticket in the provider system as having been shared, but don't rely on these marks
+    #
+    # Local cache could just be a date last poll was run, but that might be unreliable.
+    #
+    # If the cache is empty it needs to look them up on the CH (or just try creating them and fail) -- loss of local
+    # cache should not prevent normal operation but duplicate tickets should not be created.
 
-  # open the database, creating it if necessary, and make sure up to date with latest migrations
-  # TODO need a global environment setting like Rails.env
-  connection = ActiveRecordConnection.new(logger, load_config(DB_CONFIG_FILE)[:development])
-  connection.migrate(MIGRATIONS_DIR)
+  rescue Exception => e
+    @logger.error e.message + "\n" + e.backtrace.join("\n")
+    exit 1
+  end
 
-  # create connection to the Clearinghouse API
-  apiconfig = load_config(API_CONFIG_FILE)[:development]
-  apiconfig['raw'] = false
-  clearinghouse = ApiClient.new(apiconfig)
+  protected
 
-  # process for syncing the provider scheduling system with the clearinghouse:
-  #
-  # 1. adapter polls local system for new/modified tickets, pushes new tickets/changes
-  #
-  # how does the adapter know they are new/modified? it needs a local cache to list them as already having been shared,
-  # possibly just using date of last update, or if the cache is empty it needs to look them up on the CH (or just try creating them)
-  #
-  # if possible, mark the ticket in the provider system as having been shared, but don't rely on these marks
-  #
-  # 2. adapter polls local system for claimed tickets with modifications/results, pushes results/changes
-  #
-  # how does the adapter know which tickets are claimed by the provider? use local cache of claimed tickets,
-  # or query CH for all claimed ticket IDs.
-  #
-  # 3. adapter polls CH for claims and results on originated tickets, pulls claims/results
-  #
-  # primary point of this is to mark local ticket (if possible) so dispatcher is aware it has been claimed/completed
-  # although there is a fallback which is the CH lets them know,
-  #
-  # adapter recognizes new claims/results on originated tickets by date(?)
-  #
-  # 4. adapter polls CH for new and modified claimed tickets, pulls claimed tickets/changes
-  #
-  # how does adapter know which claimed tickets are new or changed? cache, fallback is to query all claimed
-  # tickets and see which ones exist on local system already.
+  def load_config(file)
+    (YAML::load(File.open(file)) || {}).with_indifferent_access
+  end
 
-  # How do we know which tickets and changes are new? Local cache or marked in database? We should try to avoid
-  # stashing Adapter-specific information in the provider system database because we don't really have control
-  # over it, so we will stash them locally, only after successful push.
+  def import_tickets
+    import_dir = @options[:import][:import_folder]
+    output_dir = @options[:import][:completed_folder]
+    import = Import.new
 
+    @logger.info "Starting import from directory [#{import_dir}] with output directory [#{output_dir || 'n/a'}]"
 
-  importer = Import.new(logger)
-  import_results = importer.import_folder(options[:import][:new_folder]) do |row|
-    begin
-      # TODO allow API to throw exceptions on server error responses or force it to return a result?
-      # TODO we need to cleanly handle when we post a trip ticket that already exists
-      result = clearinghouse.post(:trip_tickets, row)
-      logger.info "Posted trip ticket to API, result #{result}"
-    rescue Exception => e
-      logger.error "Row error: " << e.message
+    # ensure import directory is configured and exists
+    err_msg = import.check_directory(import_dir)
+    if err_msg
+      @logger.warn err_msg
+      @options[:import][:enabled]= false
+      return
+    end
+
+    # check each file the import thinks it can work with to see if we imported it previously
+    skips = []
+    import.importable_files(import_dir).each do |file|
+      size = File.size(file)
+      modified = File.mtime(file)
+      if ImportedFile.where(file_name: file, size: size, modified: modified).count > 0
+        @logger.warn "Skipping file #{file} which was previously imported"
+        skips << file
+      end
+    end
+
+    # import folder and process each imported row
+    import_results = import.from_folder(import_dir, output_dir, skips) do |row, log|
+      if row[:origin_trip_id].nil?
+        raise Import::RowError, "Imported row does not contain an origin_trip_id value"
+      elsif TrackedTicket.where(origin_trip_id: row[:origin_trip_id]).where('clearinghouse_id IS NOT NULL').count > 0
+        raise Import::RowError, "Trip ticket with ID #{row[:origin_trip_id]} already imported"
+      else
+        begin
+          api_result = @clearinghouse.post(:trip_tickets, row)
+        rescue Exception => e
+          # TODO should probably only treat logical errors as recoverable, e.g. a server model validation fails
+          raise Import::RowError, "API error: #{e}"
+        end
+        log.info "Posted trip ticket to API, result #{api_result}"
+        raise Import::RowError, "API result should be an array" unless api_result.is_a?(Array)
+        raise Import::RowError, "API result is empty" unless api_result.length > 0
+        raise Import::RowError, "API result does not contain an ID" if api_result[0]['id'].nil?
+        TrackedTicket.create(origin_trip_id: row[:origin_trip_id], clearinghouse_id: api_result[0][:id])
+      end
+    end
+
+    @logger.info "Imported #{import_results.length} files"
+    import_results.each do |r|
+      # TODO send notification for files that failed (handled here or by Monitor service?)
+      @logger.info r.to_s
+      # as an extra layer of safety, record files that were imported so we can avoid reimporting them
+      ImportedFile.create(r)
     end
   end
 
-  # TODO send notification for files that failed (handled here or by Monitor service?)
-  logger.info "Imported #{import_results.length} files, results:"
-  import_results.each do |r|
-    logger.info "File [#{r[:file_name]}], Rows [#{r[:rows]}], Error [#{r[:error] ? r[:error_msg] : 'none'}], "
-  end
-
-rescue Exception => e
-  logger.error e.message + "\n" + e.backtrace.join("\n")
-  exit 1
 end
+
+AdapterSync.new.poll
