@@ -6,7 +6,8 @@ include Win32
 
 RUBY = File.join(RbConfig::CONFIG['bindir'], RbConfig::CONFIG['ruby_install_name'])
 
-SYNC_WORKER = File.expand_path("adapter_sync.rb", File.dirname(__FILE__))
+ADAPTER_DIRECTORY = File.expand_path(File.dirname(__FILE__))
+SYNC_COMMAND = "rake adapter_sync"
 ERROR_NOTIFIER = File.expand_path("adapter_monitor_notification.rb", File.dirname(__FILE__))
 LOG_FILE = File.expand_path(File.join('..', 'log', 'adapter_monitor.log'), File.dirname(__FILE__))
 ERROR_LOG_FILE = File.expand_path(File.join('..', 'log', 'adapter_monitor_errors.log'), File.dirname(__FILE__))
@@ -28,7 +29,7 @@ class Daemon
       while running?
         @logger.info "Starting sync worker..."
         # TODO handling of stdout and stderr is not optimal - they dump to an extra log file
-        pid = spawn("\"#{RUBY}\" \"#{SYNC_WORKER}\"", out:[ERROR_LOG_FILE, 'a'], err:[:child, :out])
+        pid = spawn(SYNC_COMMAND, out:[ERROR_LOG_FILE, 'a'], err:[:child, :out], chdir: ADAPTER_DIRECTORY)
 
         # TODO rescue from SystemError if child never started
         pid, status = Process.wait2(pid)
