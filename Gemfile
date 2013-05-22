@@ -15,4 +15,5 @@ gem 'win32-service', '~>0.7', platforms: [:mswin, :mingw]
 group :test, :development do
   gem 'rake'
   gem 'minitest'
+  gem 'mocha', :require => false
 end
