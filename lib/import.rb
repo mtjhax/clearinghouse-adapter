@@ -1,4 +1,5 @@
 require 'csv'
+require 'logger'
 require 'fileutils'
 require 'active_support/core_ext/hash/indifferent_access'
 

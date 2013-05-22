@@ -11,3 +11,8 @@ gem 'activesupport'
 # gems needed by monitor
 gem 'mail', '~>2.5'
 gem 'win32-service', '~>0.7', platforms: [:mswin, :mingw]
+
+group :test, :development do
+  gem 'rake'
+  gem 'minitest'
+end
