@@ -3,6 +3,7 @@ class ImportedFile < ActiveRecord::Base
   #integer  :size
   #datetime :modified
   #integer  :rows
+  #integer  :row_errors
   #boolean  :error
   #string   :error_msg
   #datetime :created_at

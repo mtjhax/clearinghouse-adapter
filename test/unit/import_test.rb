@@ -17,7 +17,7 @@ describe Import do
     remove_test_folders(@input_folder, @output_folder)
   end
 
-  describe "Import#from_file" do
+  describe Import, "#from_file" do
     before do
       @headers = ['bread','milk','eggs']
       @data = [['wheat','skim','brown'],
@@ -72,7 +72,7 @@ describe Import do
     end
   end
 
-  describe "Import#from_folder" do
+  describe Import, "#from_folder" do
     before do
       @headers_1 = ['bread','milk','eggs']
       @data_1 = [['wheat','skim','brown'], ['rye','whole','white']]
@@ -110,7 +110,7 @@ describe Import do
       response[0][:row_errors].must_equal 0
     end
 
-    it "ignores a specified list of files" do
+    it "ignores files if they are included in the skip_files argument" do
       results = Import.new.from_folder(@input_folder, nil, [@test_csv_1]) {}
       results.must_be_kind_of(Array)
       results.length.must_equal 1
@@ -158,7 +158,7 @@ describe Import do
     end
   end
 
-  describe "Import#check_directory" do
+  describe Import, "#check_directory" do
     it "returns an error if directory is nil" do
       Import.new.check_directory(nil).must_be_kind_of(String)
     end
@@ -170,7 +170,7 @@ describe Import do
     end
   end
 
-  describe "Import#importable_files" do
+  describe Import, "#importable_files" do
     it "returns a list of all .csv and .txt files in the specified directory" do
       test_files = create_empty_files(@input_folder, 'test.txt', 'test.csv')
       importable_files = Import.new.importable_files(@input_folder)

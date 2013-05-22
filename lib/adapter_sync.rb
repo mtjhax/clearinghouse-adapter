@@ -1,5 +1,9 @@
 $LOAD_PATH.unshift(File.dirname(__FILE__))
 
+ENV["ADAPTER_ENV"] ||= 'development'
+
+# TODO add Bundler.setup
+
 require 'sqlite3'
 require 'active_record'
 require 'yaml'
@@ -22,17 +26,19 @@ class AdapterSync
   DB_CONFIG_FILE = File.expand_path(File.join('..', 'config', 'database.yml'), File.dirname(__FILE__))
   MIGRATIONS_DIR = File.expand_path(File.join('..', 'db', 'migrations'), File.dirname(__FILE__))
 
-  def initialize
+  attr_accessor :options
+
+  def initialize(options = {})
     @logger = Logger.new(LOG_FILE, 'weekly')
     @options = load_config(CONFIG_FILE)
+    @options.merge!(options)
 
     # open the database, creating it if necessary, and make sure up to date with latest migrations
-    # TODO need a global environment setting like Rails.env
-    @connection = ActiveRecordConnection.new(@logger, load_config(DB_CONFIG_FILE)[:development])
+    @connection = ActiveRecordConnection.new(@logger, load_config(DB_CONFIG_FILE)[ENV["ADAPTER_ENV"]])
     @connection.migrate(MIGRATIONS_DIR)
 
     # create connection to the Clearinghouse API
-    apiconfig = load_config(API_CONFIG_FILE)[:development]
+    apiconfig = load_config(API_CONFIG_FILE)[ENV["ADAPTER_ENV"]]
     apiconfig['raw'] = false
     @clearinghouse = ApiClient.new(apiconfig)
   end
@@ -57,13 +63,7 @@ class AdapterSync
 
   rescue Exception => e
     @logger.error e.message + "\n" + e.backtrace.join("\n")
-    exit 1
-  end
-
-  protected
-
-  def load_config(file)
-    (YAML::load(File.open(file)) || {}).with_indifferent_access
+    raise
   end
 
   def import_tickets
@@ -109,7 +109,7 @@ class AdapterSync
         raise Import::RowError, "API result should be an array" unless api_result.is_a?(Array)
         raise Import::RowError, "API result is empty" unless api_result.length > 0
         raise Import::RowError, "API result does not contain an ID" if api_result[0]['id'].nil?
-        TrackedTicket.create(origin_trip_id: row[:origin_trip_id], clearinghouse_id: api_result[0][:id])
+        TrackedTicket.create(origin_trip_id: row[:origin_trip_id], clearinghouse_id: api_result[0]['id'])
       end
     end
 
@@ -120,6 +120,12 @@ class AdapterSync
       # as an extra layer of safety, record files that were imported so we can avoid reimporting them
       ImportedFile.create(r)
     end
+  end
+
+  protected
+
+  def load_config(file)
+    (YAML::load(File.open(file)) || {}).with_indifferent_access
   end
 
 end
