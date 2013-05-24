@@ -17,5 +17,7 @@ group :test, :development do
   gem 'minitest'
   gem 'factory_girl'
   gem 'database_cleaner'
+  gem 'vcr'
+  gem 'webmock'
   gem 'mocha', :require => false
 end

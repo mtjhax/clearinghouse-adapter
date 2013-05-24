@@ -6,6 +6,7 @@ require 'minitest/mock'
 require 'factory_girl'
 require 'mocha/setup'
 require 'database_cleaner'
+require 'vcr'
 
 FactoryGirl.find_definitions
 
@@ -17,4 +18,11 @@ class MiniTest::Spec
   include FactoryGirl::Syntax::Methods
 end
 
-#Dir[Rails.root.join("test/support/**/*.rb")].each {|f| require f}
+VCR.configure do |c|
+  c.cassette_library_dir = 'test/vcr_cassettes'
+  c.hook_into :webmock
+  c.default_cassette_options = {
+    :record => :new_episodes,
+    :match_requests_on => [ :method, :host, :path ]
+  }
+end

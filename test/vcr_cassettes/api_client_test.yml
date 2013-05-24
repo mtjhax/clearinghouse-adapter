@@ -1,0 +1,315 @@
+---
+http_interactions:
+- request:
+    method: get
+    uri: http://localhost:3000/api/v1/trip_tickets?api_key=3d0fdf48c058b1f43bb63da689d1f8bd&hmac_digest=c8650d71677c92cdae6f63a515451adebe85d47d&nonce=1369284973:1&timestamp=2013-05-23T00:56:13-04:00
+    body:
+      encoding: US-ASCII
+      string: ''
+    headers:
+      Accept:
+      - ! '*/*; q=0.5, application/xml'
+      Accept-Encoding:
+      - gzip, deflate
+      User-Agent:
+      - Ruby
+  response:
+    status:
+      code: 200
+      message: OK
+    headers:
+      Content-Type:
+      - application/json
+      Content-Length:
+      - '27338'
+      X-Ua-Compatible:
+      - IE=Edge
+      Etag:
+      - ! '"76eb20c223d0aebe31dfe641b130c8ad"'
+      Cache-Control:
+      - max-age=0, private, must-revalidate
+      X-Request-Id:
+      - d11f94a573aa0aaccfbae2f9bde6d5c7
+      X-Runtime:
+      - '0.120136'
+      Connection:
+      - keep-alive
+      Server:
+      - thin 1.5.0 codename Knife
+    body:
+      encoding: US-ASCII
+      string: ! '[{"id":1,"origin_provider_id":1,"origin_customer_id":"ABC123","origin_trip_id":null,"claimant_provider_id":null,"claimant_trip_id":null,"pick_up_location_id":5,"drop_off_location_id":6,"customer_address_id":4,"customer_first_name":"First","customer_last_name":"Last","customer_middle_name":null,"customer_dob":"2012-01-01","customer_primary_phone":"555-555-5555","customer_emergency_phone":null,"customer_primary_language":null,"customer_ethnicity":null,"customer_race":null,"customer_information_withheld":false,"customer_identifiers":{},"customer_notes":null,"customer_boarding_time":0,"customer_deboarding_time":0,"customer_seats_required":1,"customer_impairment_description":null,"customer_mobility_impairments":null,"customer_assistive_devices":null,"customer_service_animals":null,"customer_eligibility_factors":null,"num_attendants":0,"num_guests":0,"guest_or_attendant_service_animals":null,"guest_or_attendant_assistive_devices":null,"requested_pickup_time":"2000-01-01T00:33:34Z","earliest_pick_up_time":null,"appointment_time":"2013-03-09T00:33:34Z","requested_drop_off_time":"2000-01-01T00:33:34Z","allowed_time_variance":-1,"trip_purpose_description":null,"trip_funders":null,"trip_notes":null,"scheduling_priority":"pickup"},{"id":2,"origin_provider_id":1,"origin_customer_id":"ABC123","origin_trip_id":null,"claimant_provider_id":null,"claimant_trip_id":null,"pick_up_location_id":8,"drop_off_location_id":9,"customer_address_id":7,"customer_first_name":"First","customer_last_name":"Last","customer_middle_name":null,"customer_dob":"2012-01-01","customer_primary_phone":"555-555-5555","customer_emergency_phone":null,"customer_primary_language":null,"customer_ethnicity":null,"customer_race":null,"customer_information_withheld":false,"customer_identifiers":{},"customer_notes":null,"customer_boarding_time":0,"customer_deboarding_time":0,"customer_seats_required":1,"customer_impairment_description":null,"customer_mobility_impairments":null,"customer_assistive_devices":null,"customer_service_animals":null,"customer_eligibility_factors":null,"num_attendants":0,"num_guests":0,"guest_or_attendant_service_animals":null,"guest_or_attendant_assistive_devices":null,"requested_pickup_time":"2000-01-01T00:33:35Z","earliest_pick_up_time":null,"appointment_time":"2013-03-09T00:33:35Z","requested_drop_off_time":"2000-01-01T00:33:35Z","allowed_time_variance":-1,"trip_purpose_description":null,"trip_funders":null,"trip_notes":null,"scheduling_priority":"pickup"},{"id":3,"origin_provider_id":2,"origin_customer_id":"ABC123","origin_trip_id":null,"claimant_provider_id":null,"claimant_trip_id":null,"pick_up_location_id":11,"drop_off_location_id":12,"customer_address_id":10,"customer_first_name":"First","customer_last_name":"Last","customer_middle_name":null,"customer_dob":"2012-01-01","customer_primary_phone":"555-555-5555","customer_emergency_phone":null,"customer_primary_language":null,"customer_ethnicity":null,"customer_race":null,"customer_information_withheld":false,"customer_identifiers":{},"customer_notes":null,"customer_boarding_time":0,"customer_deboarding_time":0,"customer_seats_required":1,"customer_impairment_description":null,"customer_mobility_impairments":null,"customer_assistive_devices":null,"customer_service_animals":null,"customer_eligibility_factors":null,"num_attendants":0,"num_guests":0,"guest_or_attendant_service_animals":null,"guest_or_attendant_assistive_devices":null,"requested_pickup_time":"2000-01-01T00:33:35Z","earliest_pick_up_time":null,"appointment_time":"2013-03-09T00:33:35Z","requested_drop_off_time":"2000-01-01T00:33:35Z","allowed_time_variance":-1,"trip_purpose_description":null,"trip_funders":null,"trip_notes":null,"scheduling_priority":"pickup"},{"id":4,"origin_provider_id":2,"origin_customer_id":"ABC123","origin_trip_id":null,"claimant_provider_id":null,"claimant_trip_id":null,"pick_up_location_id":14,"drop_off_location_id":15,"customer_address_id":13,"customer_first_name":"First","customer_last_name":"Last","customer_middle_name":null,"customer_dob":"2012-01-01","customer_primary_phone":"555-555-5555","customer_emergency_phone":null,"customer_primary_language":null,"customer_ethnicity":null,"customer_race":null,"customer_information_withheld":false,"customer_identifiers":{},"customer_notes":null,"customer_boarding_time":0,"customer_deboarding_time":0,"customer_seats_required":1,"customer_impairment_description":null,"customer_mobility_impairments":null,"customer_assistive_devices":null,"customer_service_animals":null,"customer_eligibility_factors":null,"num_attendants":0,"num_guests":0,"guest_or_attendant_service_animals":null,"guest_or_attendant_assistive_devices":null,"requested_pickup_time":"2000-01-01T00:33:35Z","earliest_pick_up_time":null,"appointment_time":"2013-03-09T00:33:35Z","requested_drop_off_time":"2000-01-01T00:33:35Z","allowed_time_variance":-1,"trip_purpose_description":null,"trip_funders":null,"trip_notes":null,"scheduling_priority":"pickup"},{"id":13,"origin_provider_id":1,"origin_customer_id":"1","origin_trip_id":null,"claimant_provider_id":null,"claimant_trip_id":null,"pick_up_location_id":44,"drop_off_location_id":45,"customer_address_id":43,"customer_first_name":"Bob","customer_last_name":"Barker","customer_middle_name":"","customer_dob":"1913-01-01","customer_primary_phone":"123-555-1212","customer_emergency_phone":"","customer_primary_language":"","customer_ethnicity":"","customer_race":"","customer_information_withheld":true,"customer_identifiers":{},"customer_notes":"","customer_boarding_time":0,"customer_deboarding_time":0,"customer_seats_required":1,"customer_impairment_description":"","customer_mobility_impairments":[],"customer_assistive_devices":[],"customer_service_animals":[],"customer_eligibility_factors":[],"num_attendants":0,"num_guests":0,"guest_or_attendant_service_animals":[],"guest_or_attendant_assistive_devices":[],"requested_pickup_time":"2000-01-01T12:00:00Z","earliest_pick_up_time":"2000-01-01T11:00:00Z","appointment_time":"2013-03-17T13:00:00Z","requested_drop_off_time":"2000-01-01T13:00:00Z","allowed_time_variance":-1,"trip_purpose_description":"spay
+        and neuter pets","trip_funders":[],"trip_notes":"","scheduling_priority":"pickup"},{"id":18,"origin_provider_id":1,"origin_customer_id":"111","origin_trip_id":null,"claimant_provider_id":null,"claimant_trip_id":null,"pick_up_location_id":null,"drop_off_location_id":null,"customer_address_id":null,"customer_first_name":"Bob","customer_last_name":"Smith","customer_middle_name":null,"customer_dob":"1955-02-01","customer_primary_phone":"222-333-4444","customer_emergency_phone":null,"customer_primary_language":null,"customer_ethnicity":null,"customer_race":null,"customer_information_withheld":false,"customer_identifiers":{},"customer_notes":null,"customer_boarding_time":0,"customer_deboarding_time":0,"customer_seats_required":1,"customer_impairment_description":null,"customer_mobility_impairments":null,"customer_assistive_devices":null,"customer_service_animals":null,"customer_eligibility_factors":null,"num_attendants":0,"num_guests":0,"guest_or_attendant_service_animals":null,"guest_or_attendant_assistive_devices":null,"requested_pickup_time":"2000-01-01T09:00:00Z","earliest_pick_up_time":null,"appointment_time":"2013-05-11T10:00:00Z","requested_drop_off_time":"2000-01-01T13:00:00Z","allowed_time_variance":-1,"trip_purpose_description":null,"trip_funders":null,"trip_notes":null,"scheduling_priority":"pickup"},{"id":14,"origin_provider_id":1,"origin_customer_id":"111","origin_trip_id":null,"claimant_provider_id":null,"claimant_trip_id":null,"pick_up_location_id":null,"drop_off_location_id":null,"customer_address_id":null,"customer_first_name":"Bob","customer_last_name":"Smith","customer_middle_name":null,"customer_dob":"1955-02-01","customer_primary_phone":"222-333-4444","customer_emergency_phone":null,"customer_primary_language":null,"customer_ethnicity":null,"customer_race":null,"customer_information_withheld":false,"customer_identifiers":{},"customer_notes":null,"customer_boarding_time":0,"customer_deboarding_time":0,"customer_seats_required":1,"customer_impairment_description":null,"customer_mobility_impairments":null,"customer_assistive_devices":null,"customer_service_animals":null,"customer_eligibility_factors":null,"num_attendants":0,"num_guests":0,"guest_or_attendant_service_animals":null,"guest_or_attendant_assistive_devices":null,"requested_pickup_time":"2000-01-01T09:00:00Z","earliest_pick_up_time":null,"appointment_time":"2013-05-11T10:00:00Z","requested_drop_off_time":"2000-01-01T13:00:00Z","allowed_time_variance":-1,"trip_purpose_description":null,"trip_funders":null,"trip_notes":null,"scheduling_priority":"pickup"},{"id":15,"origin_provider_id":1,"origin_customer_id":"111","origin_trip_id":null,"claimant_provider_id":null,"claimant_trip_id":null,"pick_up_location_id":null,"drop_off_location_id":null,"customer_address_id":null,"customer_first_name":"Bob","customer_last_name":"Smith","customer_middle_name":null,"customer_dob":"1955-02-01","customer_primary_phone":"222-333-4444","customer_emergency_phone":null,"customer_primary_language":null,"customer_ethnicity":null,"customer_race":null,"customer_information_withheld":false,"customer_identifiers":{},"customer_notes":null,"customer_boarding_time":0,"customer_deboarding_time":0,"customer_seats_required":1,"customer_impairment_description":null,"customer_mobility_impairments":null,"customer_assistive_devices":null,"customer_service_animals":null,"customer_eligibility_factors":null,"num_attendants":0,"num_guests":0,"guest_or_attendant_service_animals":null,"guest_or_attendant_assistive_devices":null,"requested_pickup_time":"2000-01-01T09:00:00Z","earliest_pick_up_time":null,"appointment_time":"2013-05-11T10:00:00Z","requested_drop_off_time":"2000-01-01T13:00:00Z","allowed_time_variance":-1,"trip_purpose_description":null,"trip_funders":null,"trip_notes":null,"scheduling_priority":"pickup"},{"id":16,"origin_provider_id":1,"origin_customer_id":"111","origin_trip_id":null,"claimant_provider_id":null,"claimant_trip_id":null,"pick_up_location_id":null,"drop_off_location_id":null,"customer_address_id":null,"customer_first_name":"Bob","customer_last_name":"Smith","customer_middle_name":null,"customer_dob":"1955-02-01","customer_primary_phone":"222-333-4444","customer_emergency_phone":null,"customer_primary_language":null,"customer_ethnicity":null,"customer_race":null,"customer_information_withheld":false,"customer_identifiers":{},"customer_notes":null,"customer_boarding_time":0,"customer_deboarding_time":0,"customer_seats_required":1,"customer_impairment_description":null,"customer_mobility_impairments":null,"customer_assistive_devices":null,"customer_service_animals":null,"customer_eligibility_factors":null,"num_attendants":0,"num_guests":0,"guest_or_attendant_service_animals":null,"guest_or_attendant_assistive_devices":null,"requested_pickup_time":"2000-01-01T09:00:00Z","earliest_pick_up_time":null,"appointment_time":"2013-05-11T10:00:00Z","requested_drop_off_time":"2000-01-01T13:00:00Z","allowed_time_variance":-1,"trip_purpose_description":null,"trip_funders":null,"trip_notes":null,"scheduling_priority":"pickup"},{"id":17,"origin_provider_id":1,"origin_customer_id":"111","origin_trip_id":null,"claimant_provider_id":null,"claimant_trip_id":null,"pick_up_location_id":null,"drop_off_location_id":null,"customer_address_id":null,"customer_first_name":"Bob","customer_last_name":"Smith","customer_middle_name":null,"customer_dob":"1955-02-01","customer_primary_phone":"222-333-4444","customer_emergency_phone":null,"customer_primary_language":null,"customer_ethnicity":null,"customer_race":null,"customer_information_withheld":false,"customer_identifiers":{},"customer_notes":null,"customer_boarding_time":0,"customer_deboarding_time":0,"customer_seats_required":1,"customer_impairment_description":null,"customer_mobility_impairments":null,"customer_assistive_devices":null,"customer_service_animals":null,"customer_eligibility_factors":null,"num_attendants":0,"num_guests":0,"guest_or_attendant_service_animals":null,"guest_or_attendant_assistive_devices":null,"requested_pickup_time":"2000-01-01T09:00:00Z","earliest_pick_up_time":null,"appointment_time":"2013-05-11T10:00:00Z","requested_drop_off_time":"2000-01-01T13:00:00Z","allowed_time_variance":-1,"trip_purpose_description":null,"trip_funders":null,"trip_notes":null,"scheduling_priority":"pickup"},{"id":20,"origin_provider_id":1,"origin_customer_id":"222","origin_trip_id":111,"claimant_provider_id":null,"claimant_trip_id":null,"pick_up_location_id":null,"drop_off_location_id":null,"customer_address_id":null,"customer_first_name":"Bob","customer_last_name":"Smith","customer_middle_name":null,"customer_dob":"1955-02-01","customer_primary_phone":"222-333-4444","customer_emergency_phone":null,"customer_primary_language":null,"customer_ethnicity":null,"customer_race":null,"customer_information_withheld":false,"customer_identifiers":{},"customer_notes":null,"customer_boarding_time":0,"customer_deboarding_time":0,"customer_seats_required":1,"customer_impairment_description":null,"customer_mobility_impairments":null,"customer_assistive_devices":null,"customer_service_animals":null,"customer_eligibility_factors":null,"num_attendants":0,"num_guests":0,"guest_or_attendant_service_animals":null,"guest_or_attendant_assistive_devices":null,"requested_pickup_time":"2000-01-01T09:00:00Z","earliest_pick_up_time":null,"appointment_time":"2013-05-12T10:00:00Z","requested_drop_off_time":"2000-01-01T13:00:00Z","allowed_time_variance":-1,"trip_purpose_description":null,"trip_funders":null,"trip_notes":null,"scheduling_priority":"pickup"},{"id":19,"origin_provider_id":1,"origin_customer_id":"111","origin_trip_id":null,"claimant_provider_id":null,"claimant_trip_id":null,"pick_up_location_id":null,"drop_off_location_id":null,"customer_address_id":null,"customer_first_name":"Bob","customer_last_name":"Smith","customer_middle_name":null,"customer_dob":"1955-02-01","customer_primary_phone":"222-333-4444","customer_emergency_phone":null,"customer_primary_language":null,"customer_ethnicity":null,"customer_race":null,"customer_information_withheld":false,"customer_identifiers":{},"customer_notes":null,"customer_boarding_time":0,"customer_deboarding_time":0,"customer_seats_required":1,"customer_impairment_description":null,"customer_mobility_impairments":null,"customer_assistive_devices":null,"customer_service_animals":null,"customer_eligibility_factors":null,"num_attendants":0,"num_guests":0,"guest_or_attendant_service_animals":null,"guest_or_attendant_assistive_devices":null,"requested_pickup_time":"2000-01-01T09:00:00Z","earliest_pick_up_time":null,"appointment_time":"2013-05-12T10:00:00Z","requested_drop_off_time":"2000-01-01T13:00:00Z","allowed_time_variance":-1,"trip_purpose_description":null,"trip_funders":null,"trip_notes":null,"scheduling_priority":"pickup"},{"id":21,"origin_provider_id":1,"origin_customer_id":"222","origin_trip_id":111,"claimant_provider_id":null,"claimant_trip_id":null,"pick_up_location_id":null,"drop_off_location_id":null,"customer_address_id":null,"customer_first_name":"Bob","customer_last_name":"Smith","customer_middle_name":null,"customer_dob":"1955-02-01","customer_primary_phone":"222-333-4444","customer_emergency_phone":null,"customer_primary_language":null,"customer_ethnicity":null,"customer_race":null,"customer_information_withheld":false,"customer_identifiers":{},"customer_notes":null,"customer_boarding_time":0,"customer_deboarding_time":0,"customer_seats_required":1,"customer_impairment_description":null,"customer_mobility_impairments":null,"customer_assistive_devices":null,"customer_service_animals":null,"customer_eligibility_factors":null,"num_attendants":0,"num_guests":0,"guest_or_attendant_service_animals":null,"guest_or_attendant_assistive_devices":null,"requested_pickup_time":"2000-01-01T09:00:00Z","earliest_pick_up_time":null,"appointment_time":"2013-05-12T10:00:00Z","requested_drop_off_time":"2000-01-01T13:00:00Z","allowed_time_variance":-1,"trip_purpose_description":null,"trip_funders":null,"trip_notes":null,"scheduling_priority":"pickup"},{"id":22,"origin_provider_id":1,"origin_customer_id":"222","origin_trip_id":111,"claimant_provider_id":null,"claimant_trip_id":null,"pick_up_location_id":null,"drop_off_location_id":null,"customer_address_id":null,"customer_first_name":"Bob","customer_last_name":"Smith","customer_middle_name":null,"customer_dob":"1955-02-01","customer_primary_phone":"222-333-4444","customer_emergency_phone":null,"customer_primary_language":null,"customer_ethnicity":null,"customer_race":null,"customer_information_withheld":false,"customer_identifiers":{},"customer_notes":null,"customer_boarding_time":0,"customer_deboarding_time":0,"customer_seats_required":1,"customer_impairment_description":null,"customer_mobility_impairments":null,"customer_assistive_devices":null,"customer_service_animals":null,"customer_eligibility_factors":null,"num_attendants":0,"num_guests":0,"guest_or_attendant_service_animals":null,"guest_or_attendant_assistive_devices":null,"requested_pickup_time":"2000-01-01T09:00:00Z","earliest_pick_up_time":null,"appointment_time":"2013-05-14T10:00:00Z","requested_drop_off_time":"2000-01-01T13:00:00Z","allowed_time_variance":-1,"trip_purpose_description":null,"trip_funders":null,"trip_notes":null,"scheduling_priority":"pickup"},{"id":23,"origin_provider_id":1,"origin_customer_id":"222","origin_trip_id":111,"claimant_provider_id":null,"claimant_trip_id":null,"pick_up_location_id":null,"drop_off_location_id":null,"customer_address_id":null,"customer_first_name":"Bob","customer_last_name":"Smith","customer_middle_name":null,"customer_dob":"1955-02-01","customer_primary_phone":"222-333-4444","customer_emergency_phone":null,"customer_primary_language":null,"customer_ethnicity":null,"customer_race":null,"customer_information_withheld":false,"customer_identifiers":{},"customer_notes":null,"customer_boarding_time":0,"customer_deboarding_time":0,"customer_seats_required":1,"customer_impairment_description":null,"customer_mobility_impairments":null,"customer_assistive_devices":null,"customer_service_animals":null,"customer_eligibility_factors":null,"num_attendants":0,"num_guests":0,"guest_or_attendant_service_animals":null,"guest_or_attendant_assistive_devices":null,"requested_pickup_time":"2000-01-01T09:00:00Z","earliest_pick_up_time":null,"appointment_time":"2013-05-15T10:00:00Z","requested_drop_off_time":"2000-01-01T13:00:00Z","allowed_time_variance":-1,"trip_purpose_description":null,"trip_funders":null,"trip_notes":null,"scheduling_priority":"pickup"},{"id":24,"origin_provider_id":1,"origin_customer_id":"222","origin_trip_id":111,"claimant_provider_id":null,"claimant_trip_id":null,"pick_up_location_id":null,"drop_off_location_id":null,"customer_address_id":null,"customer_first_name":"Bob","customer_last_name":"Smith","customer_middle_name":null,"customer_dob":"1955-02-01","customer_primary_phone":"222-333-4444","customer_emergency_phone":null,"customer_primary_language":null,"customer_ethnicity":null,"customer_race":null,"customer_information_withheld":false,"customer_identifiers":{},"customer_notes":null,"customer_boarding_time":0,"customer_deboarding_time":0,"customer_seats_required":1,"customer_impairment_description":null,"customer_mobility_impairments":null,"customer_assistive_devices":null,"customer_service_animals":null,"customer_eligibility_factors":null,"num_attendants":0,"num_guests":0,"guest_or_attendant_service_animals":null,"guest_or_attendant_assistive_devices":null,"requested_pickup_time":"2000-01-01T09:00:00Z","earliest_pick_up_time":null,"appointment_time":"2013-05-15T10:00:00Z","requested_drop_off_time":"2000-01-01T13:00:00Z","allowed_time_variance":-1,"trip_purpose_description":null,"trip_funders":null,"trip_notes":null,"scheduling_priority":"pickup"},{"id":25,"origin_provider_id":1,"origin_customer_id":"222","origin_trip_id":111,"claimant_provider_id":null,"claimant_trip_id":null,"pick_up_location_id":null,"drop_off_location_id":null,"customer_address_id":null,"customer_first_name":"Bob","customer_last_name":"Smith","customer_middle_name":null,"customer_dob":"1955-02-01","customer_primary_phone":"222-333-4444","customer_emergency_phone":null,"customer_primary_language":null,"customer_ethnicity":null,"customer_race":null,"customer_information_withheld":false,"customer_identifiers":{},"customer_notes":null,"customer_boarding_time":0,"customer_deboarding_time":0,"customer_seats_required":1,"customer_impairment_description":null,"customer_mobility_impairments":null,"customer_assistive_devices":null,"customer_service_animals":null,"customer_eligibility_factors":null,"num_attendants":0,"num_guests":0,"guest_or_attendant_service_animals":null,"guest_or_attendant_assistive_devices":null,"requested_pickup_time":"2000-01-01T09:00:00Z","earliest_pick_up_time":null,"appointment_time":"2013-05-15T10:00:00Z","requested_drop_off_time":"2000-01-01T13:00:00Z","allowed_time_variance":-1,"trip_purpose_description":null,"trip_funders":null,"trip_notes":null,"scheduling_priority":"pickup"},{"id":26,"origin_provider_id":1,"origin_customer_id":"222","origin_trip_id":111,"claimant_provider_id":null,"claimant_trip_id":null,"pick_up_location_id":null,"drop_off_location_id":null,"customer_address_id":null,"customer_first_name":"Bob","customer_last_name":"Smith","customer_middle_name":null,"customer_dob":"1955-02-01","customer_primary_phone":"222-333-4444","customer_emergency_phone":null,"customer_primary_language":null,"customer_ethnicity":null,"customer_race":null,"customer_information_withheld":false,"customer_identifiers":{},"customer_notes":null,"customer_boarding_time":0,"customer_deboarding_time":0,"customer_seats_required":1,"customer_impairment_description":null,"customer_mobility_impairments":null,"customer_assistive_devices":null,"customer_service_animals":null,"customer_eligibility_factors":null,"num_attendants":0,"num_guests":0,"guest_or_attendant_service_animals":null,"guest_or_attendant_assistive_devices":null,"requested_pickup_time":"2000-01-01T09:00:00Z","earliest_pick_up_time":null,"appointment_time":"2013-05-18T10:00:00Z","requested_drop_off_time":"2000-01-01T13:00:00Z","allowed_time_variance":-1,"trip_purpose_description":null,"trip_funders":null,"trip_notes":null,"scheduling_priority":"pickup"},{"id":27,"origin_provider_id":1,"origin_customer_id":"222","origin_trip_id":111,"claimant_provider_id":null,"claimant_trip_id":null,"pick_up_location_id":null,"drop_off_location_id":null,"customer_address_id":null,"customer_first_name":"Bob","customer_last_name":"Smith","customer_middle_name":null,"customer_dob":"1955-02-01","customer_primary_phone":"222-333-4444","customer_emergency_phone":null,"customer_primary_language":null,"customer_ethnicity":null,"customer_race":null,"customer_information_withheld":false,"customer_identifiers":{},"customer_notes":null,"customer_boarding_time":0,"customer_deboarding_time":0,"customer_seats_required":1,"customer_impairment_description":null,"customer_mobility_impairments":null,"customer_assistive_devices":null,"customer_service_animals":null,"customer_eligibility_factors":null,"num_attendants":0,"num_guests":0,"guest_or_attendant_service_animals":null,"guest_or_attendant_assistive_devices":null,"requested_pickup_time":"2000-01-01T09:00:00Z","earliest_pick_up_time":null,"appointment_time":"2013-05-21T10:00:00Z","requested_drop_off_time":"2000-01-01T13:00:00Z","allowed_time_variance":-1,"trip_purpose_description":null,"trip_funders":null,"trip_notes":null,"scheduling_priority":"pickup"},{"id":28,"origin_provider_id":1,"origin_customer_id":"222","origin_trip_id":111,"claimant_provider_id":null,"claimant_trip_id":null,"pick_up_location_id":null,"drop_off_location_id":null,"customer_address_id":null,"customer_first_name":"Bob","customer_last_name":"Smith","customer_middle_name":null,"customer_dob":"1955-02-01","customer_primary_phone":"222-333-4444","customer_emergency_phone":null,"customer_primary_language":null,"customer_ethnicity":null,"customer_race":null,"customer_information_withheld":false,"customer_identifiers":{},"customer_notes":null,"customer_boarding_time":0,"customer_deboarding_time":0,"customer_seats_required":1,"customer_impairment_description":null,"customer_mobility_impairments":null,"customer_assistive_devices":null,"customer_service_animals":null,"customer_eligibility_factors":null,"num_attendants":0,"num_guests":0,"guest_or_attendant_service_animals":null,"guest_or_attendant_assistive_devices":null,"requested_pickup_time":"2000-01-01T09:00:00Z","earliest_pick_up_time":null,"appointment_time":"2013-05-21T10:00:00Z","requested_drop_off_time":"2000-01-01T13:00:00Z","allowed_time_variance":-1,"trip_purpose_description":null,"trip_funders":null,"trip_notes":null,"scheduling_priority":"pickup"},{"id":29,"origin_provider_id":1,"origin_customer_id":"222","origin_trip_id":111,"claimant_provider_id":null,"claimant_trip_id":null,"pick_up_location_id":null,"drop_off_location_id":null,"customer_address_id":null,"customer_first_name":"Bob","customer_last_name":"Smith","customer_middle_name":null,"customer_dob":"1955-02-01","customer_primary_phone":"222-333-4444","customer_emergency_phone":null,"customer_primary_language":null,"customer_ethnicity":null,"customer_race":null,"customer_information_withheld":false,"customer_identifiers":{},"customer_notes":null,"customer_boarding_time":0,"customer_deboarding_time":0,"customer_seats_required":1,"customer_impairment_description":null,"customer_mobility_impairments":null,"customer_assistive_devices":null,"customer_service_animals":null,"customer_eligibility_factors":null,"num_attendants":0,"num_guests":0,"guest_or_attendant_service_animals":null,"guest_or_attendant_assistive_devices":null,"requested_pickup_time":"2000-01-01T09:00:00Z","earliest_pick_up_time":null,"appointment_time":"2013-05-21T10:00:00Z","requested_drop_off_time":"2000-01-01T13:00:00Z","allowed_time_variance":-1,"trip_purpose_description":null,"trip_funders":null,"trip_notes":null,"scheduling_priority":"pickup"},{"id":30,"origin_provider_id":1,"origin_customer_id":"222","origin_trip_id":111,"claimant_provider_id":null,"claimant_trip_id":null,"pick_up_location_id":null,"drop_off_location_id":null,"customer_address_id":null,"customer_first_name":"Bob","customer_last_name":"Smith","customer_middle_name":null,"customer_dob":"1955-02-01","customer_primary_phone":"222-333-4444","customer_emergency_phone":null,"customer_primary_language":null,"customer_ethnicity":null,"customer_race":null,"customer_information_withheld":false,"customer_identifiers":{},"customer_notes":null,"customer_boarding_time":0,"customer_deboarding_time":0,"customer_seats_required":1,"customer_impairment_description":null,"customer_mobility_impairments":null,"customer_assistive_devices":null,"customer_service_animals":null,"customer_eligibility_factors":null,"num_attendants":0,"num_guests":0,"guest_or_attendant_service_animals":null,"guest_or_attendant_assistive_devices":null,"requested_pickup_time":"2000-01-01T09:00:00Z","earliest_pick_up_time":null,"appointment_time":"2013-05-22T10:00:00Z","requested_drop_off_time":"2000-01-01T13:00:00Z","allowed_time_variance":-1,"trip_purpose_description":null,"trip_funders":null,"trip_notes":null,"scheduling_priority":"pickup"}]'
+    http_version: 
+  recorded_at: Thu, 23 May 2013 04:56:13 GMT
+- request:
+    method: get
+    uri: http://localhost:3000/api/v1/trip_tickets/1?api_key=3d0fdf48c058b1f43bb63da689d1f8bd&hmac_digest=ca489c4ecd8bd2c42156c19efa3d3366be3095ec&nonce=1369284981:1&timestamp=2013-05-23T00:56:21-04:00
+    body:
+      encoding: US-ASCII
+      string: ''
+    headers:
+      Accept:
+      - ! '*/*; q=0.5, application/xml'
+      Accept-Encoding:
+      - gzip, deflate
+      User-Agent:
+      - Ruby
+  response:
+    status:
+      code: 200
+      message: OK
+    headers:
+      Content-Type:
+      - application/json
+      Content-Length:
+      - '1824'
+      X-Ua-Compatible:
+      - IE=Edge
+      Etag:
+      - ! '"6f924682543a326e4017d2c8c40884e9"'
+      Cache-Control:
+      - max-age=0, private, must-revalidate
+      X-Request-Id:
+      - 524a272e19ee5952f4d42bc1566c7f32
+      X-Runtime:
+      - '0.025557'
+      Connection:
+      - keep-alive
+      Server:
+      - thin 1.5.0 codename Knife
+    body:
+      encoding: US-ASCII
+      string: ! '{"id":1,"origin_provider_id":1,"origin_customer_id":"ABC123","origin_trip_id":null,"claimant_provider_id":null,"claimant_trip_id":null,"pick_up_location_id":5,"drop_off_location_id":6,"customer_address_id":4,"customer_first_name":"First","customer_last_name":"Last","customer_middle_name":null,"customer_dob":"2012-01-01","customer_primary_phone":"555-555-5555","customer_emergency_phone":null,"customer_primary_language":null,"customer_ethnicity":null,"customer_race":null,"customer_information_withheld":false,"customer_identifiers":{},"customer_notes":null,"customer_boarding_time":0,"customer_deboarding_time":0,"customer_seats_required":1,"customer_impairment_description":null,"customer_mobility_impairments":null,"customer_assistive_devices":null,"customer_service_animals":null,"customer_eligibility_factors":null,"num_attendants":0,"num_guests":0,"guest_or_attendant_service_animals":null,"guest_or_attendant_assistive_devices":null,"requested_pickup_time":"2000-01-01T00:33:34Z","earliest_pick_up_time":null,"appointment_time":"2013-03-09T00:33:34Z","requested_drop_off_time":"2000-01-01T00:33:34Z","allowed_time_variance":-1,"trip_purpose_description":null,"trip_funders":null,"trip_notes":null,"scheduling_priority":"pickup","originator":{"name":"Google","primary_contact_email":null,"address":{"address_1":"123
+        Main St","address_2":null,"city":"Portland","position":null,"state":"OR","zip":"97210"}},"claimant":null,"customer_address":{"address_1":"123
+        Main St","address_2":null,"city":"Portland","position":null,"state":"OR","zip":"97210"},"pick_up_location":{"address_1":"123
+        Main St","address_2":null,"city":"Portland","position":null,"state":"OR","zip":"97210"},"drop_off_location":{"address_1":"123
+        Main St","address_2":null,"city":"Portland","position":null,"state":"OR","zip":"97210"},"trip_result":null}'
+    http_version: 
+  recorded_at: Thu, 23 May 2013 04:56:21 GMT
+- request:
+    method: get
+    uri: http://localhost:3000/api/v1/trip_tickets/1/trip_ticket_comments?api_key=3d0fdf48c058b1f43bb63da689d1f8bd&hmac_digest=25a305a1ee3a6a1427250bf4374b96db2fc73bc4&nonce=1369284989:1&timestamp=2013-05-23T00:56:29-04:00
+    body:
+      encoding: US-ASCII
+      string: ''
+    headers:
+      Accept:
+      - ! '*/*; q=0.5, application/xml'
+      Accept-Encoding:
+      - gzip, deflate
+      User-Agent:
+      - Ruby
+  response:
+    status:
+      code: 200
+      message: OK
+    headers:
+      Content-Type:
+      - application/json
+      Content-Length:
+      - '127'
+      X-Ua-Compatible:
+      - IE=Edge
+      Etag:
+      - ! '"a263532fd9f0ac85071efaec48591f98"'
+      Cache-Control:
+      - max-age=0, private, must-revalidate
+      X-Request-Id:
+      - 01e1835abe1e60305ba52289721b8cdb
+      X-Runtime:
+      - '0.016759'
+      Connection:
+      - keep-alive
+      Server:
+      - thin 1.5.0 codename Knife
+    body:
+      encoding: US-ASCII
+      string: ! '[{"id":1,"body":"This is a comment","trip_ticket_id":1,"user_id":4},{"id":2,"body":"This
+        is another comment","trip_ticket_id":1,"user_id":4}]'
+    http_version:
+  recorded_at: Thu, 23 May 2013 04:56:29 GMT
+- request:
+    method: get
+    uri: http://localhost:3000/api/v1/trip_tickets/1/trip_ticket_comments/2?api_key=3d0fdf48c058b1f43bb63da689d1f8bd&hmac_digest=f33c17ab0047a388dc2d6e09773bee1c07608c68&nonce=1369285936:1&timestamp=2013-05-23T01:12:16-04:00
+    body:
+      encoding: US-ASCII
+      string: ''
+    headers:
+      Accept:
+      - ! '*/*; q=0.5, application/xml'
+      Accept-Encoding:
+      - gzip, deflate
+      User-Agent:
+      - Ruby
+  response:
+    status:
+      code: 200
+      message: OK
+    headers:
+      Content-Type:
+      - application/json
+      Content-Length:
+      - '65'
+      X-Ua-Compatible:
+      - IE=Edge
+      Etag:
+      - ! '"b7382acb0c20cf6ed55481b5098cd92f"'
+      Cache-Control:
+      - max-age=0, private, must-revalidate
+      X-Request-Id:
+      - 6a2039ec917b0227e9719a3dab1d05f9
+      X-Runtime:
+      - '1.091102'
+      Connection:
+      - keep-alive
+      Server:
+      - thin 1.5.0 codename Knife
+    body:
+      encoding: US-ASCII
+      string: ! '{"id":2,"body":"This is another comment","trip_ticket_id":1,"user_id":4}'
+    http_version:
+  recorded_at: Thu, 23 May 2013 05:12:18 GMT
+- request:
+    method: post
+    uri: http://localhost:3000/api/v1/trip_tickets/1/trip_ticket_comments
+    body:
+      encoding: US-ASCII
+      string: api_key=3d0fdf48c058b1f43bb63da689d1f8bd&nonce=1369410243%3A1&timestamp=2013-05-24T11%3A44%3A03-04%3A00&hmac_digest=17dc82b80f1f21735d8958e729116ce8e8bcc0e1&trip_ticket_comment%5Buser_id%5D=4&trip_ticket_comment%5Bbody%5D=Hi%20there
+    headers:
+      Accept:
+      - ! '*/*; q=0.5, application/xml'
+      Accept-Encoding:
+      - gzip, deflate
+      Content-Length:
+      - '232'
+      Content-Type:
+      - application/x-www-form-urlencoded
+      User-Agent:
+      - Ruby
+  response:
+    status:
+      code: 201
+      message: Created
+    headers:
+      Content-Type:
+      - application/json
+      Content-Length:
+      - '50'
+      X-Ua-Compatible:
+      - IE=Edge
+      Etag:
+      - ! '"7c60914cb173c35ea6fb95185acd831a"'
+      Cache-Control:
+      - max-age=0, private, must-revalidate
+      X-Request-Id:
+      - 9b546843aa19d404fcf5330a5f5c860a
+      X-Runtime:
+      - '1.721124'
+      Connection:
+      - keep-alive
+      Server:
+      - thin 1.5.0 codename Knife
+    body:
+      encoding: US-ASCII
+      string: ! '{"id":3,"body":"Hi there","trip_ticket_id":1,"user_id":4}'
+    http_version:
+  recorded_at: Fri, 24 May 2013 15:44:04 GMT
+- request:
+    method: delete
+    uri: http://localhost:3000/api/v1/trip_tickets/1
+    body:
+      encoding: US-ASCII
+      string: ''
+    headers:
+      Accept:
+      - ! '*/*; q=0.5, application/xml'
+      Accept-Encoding:
+      - gzip, deflate
+      Api-Key:
+      - 3d0fdf48c058b1f43bb63da689d1f8bd
+      Nonce:
+      - '1369412522:1'
+      Timestamp:
+      - '2013-05-24T12:22:02-04:00'
+      Hmac-Digest:
+      - !binary |-
+        NTZhODkzMzExNzQ0MmRmNDBhNDBmYzIwMDA3N2UyY2RiZjhhNDM3ZQ==
+      Trip-Ticket:
+      - ''
+      User-Agent:
+      - Ruby
+  response:
+    status:
+      code: 405
+      message: Method Not Allowed
+    headers:
+      Allow:
+      - OPTIONS, GET, PUT
+      X-Ua-Compatible:
+      - IE=Edge
+      Cache-Control:
+      - no-cache
+      X-Request-Id:
+      - 8d9574acd937e0b77df1d257da8bd00d
+      X-Runtime:
+      - '0.003047'
+      Connection:
+      - close
+      Server:
+      - thin 1.5.0 codename Knife
+    body:
+      encoding: US-ASCII
+      string: ''
+    http_version: 
+  recorded_at: Fri, 24 May 2013 16:22:02 GMT
+- request:
+    method: put
+    uri: http://localhost:3000/api/v1/trip_tickets/1
+    body:
+      encoding: US-ASCII
+      string: api_key=3d0fdf48c058b1f43bb63da689d1f8bd&nonce=1369412843%3A1&timestamp=2013-05-24T12%3A27%3A23-04%3A00&hmac_digest=5bc3160af7a9436230fbc0558b09409f44ac559f&trip_ticket%5Bcustomer_first_name%5D=Slim&trip_ticket%5Bcustomer_last_name%5D=Shady
+    headers:
+      Accept:
+      - ! '*/*; q=0.5, application/xml'
+      Accept-Encoding:
+      - gzip, deflate
+      Content-Length:
+      - '240'
+      Content-Type:
+      - application/x-www-form-urlencoded
+      User-Agent:
+      - Ruby
+  response:
+    status:
+      code: 200
+      message: OK
+    headers:
+      Content-Type:
+      - application/json
+      Content-Length:
+      - '1824'
+      X-Ua-Compatible:
+      - IE=Edge
+      Etag:
+      - ! '"379a02caafcda90bd5e033ac73f2dc0b"'
+      Cache-Control:
+      - max-age=0, private, must-revalidate
+      X-Request-Id:
+      - e77eb639f91862ff6949c8af1c5ee1b6
+      X-Runtime:
+      - '0.514336'
+      Connection:
+      - keep-alive
+      Server:
+      - thin 1.5.0 codename Knife
+    body:
+      encoding: US-ASCII
+      string: ! '{"id":1,"origin_provider_id":1,"origin_customer_id":"ABC123","origin_trip_id":null,"claimant_provider_id":null,"claimant_trip_id":null,"pick_up_location_id":5,"drop_off_location_id":6,"customer_address_id":4,"customer_first_name":"Slim","customer_last_name":"Shady","customer_middle_name":null,"customer_dob":"2012-01-01","customer_primary_phone":"555-555-5555","customer_emergency_phone":null,"customer_primary_language":null,"customer_ethnicity":null,"customer_race":null,"customer_information_withheld":false,"customer_identifiers":{},"customer_notes":null,"customer_boarding_time":0,"customer_deboarding_time":0,"customer_seats_required":1,"customer_impairment_description":null,"customer_mobility_impairments":null,"customer_assistive_devices":null,"customer_service_animals":null,"customer_eligibility_factors":null,"num_attendants":0,"num_guests":0,"guest_or_attendant_service_animals":null,"guest_or_attendant_assistive_devices":null,"requested_pickup_time":"2000-01-01T00:33:34Z","earliest_pick_up_time":null,"appointment_time":"2013-03-09T00:33:34Z","requested_drop_off_time":"2000-01-01T00:33:34Z","allowed_time_variance":-1,"trip_purpose_description":null,"trip_funders":null,"trip_notes":null,"scheduling_priority":"pickup","originator":{"name":"Google","primary_contact_email":null,"address":{"address_1":"123
+        Main St","address_2":null,"city":"Portland","position":null,"state":"OR","zip":"97210"}},"claimant":null,"customer_address":{"address_1":"123
+        Main St","address_2":null,"city":"Portland","position":null,"state":"OR","zip":"97210"},"pick_up_location":{"address_1":"123
+        Main St","address_2":null,"city":"Portland","position":null,"state":"OR","zip":"97210"},"drop_off_location":{"address_1":"123
+        Main St","address_2":null,"city":"Portland","position":null,"state":"OR","zip":"97210"},"trip_result":null}'
+    http_version: 
+  recorded_at: Fri, 24 May 2013 16:27:23 GMT
+recorded_with: VCR 2.5.0
