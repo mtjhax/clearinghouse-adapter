@@ -14,6 +14,8 @@ class ApiClient
   # secret_key:   from provider API credentials
   # raw: true     causes the queries to return hashes instead of ApiClient instances (for processing larger datasets)
 
+  attr_accessor :options
+
   def initialize(options_hash = {})
     @options = (options_hash || {}).with_indifferent_access
 
@@ -86,14 +88,18 @@ class ApiClient
     if @options[:raw]
       result
     else
-      # convert array of raw results into an array of dups of the current object with result data stored
-      result = [result] unless result.is_a?(Array)
-      result.map {|r| self.dup.tap {|dup| dup.set_attributes(resource, r) }}
+      # convert raw results into dups of the current object with result data stored
+      if result.is_a?(Array)
+        result.map {|r| self.dup.tap {|dup| dup.set_attributes(resource, false, r) }}
+      else
+        self.dup.tap {|dup| dup.set_attributes(resource, true, result) }
+      end
     end
   end
 
-  def set_attributes(resource_path, attributes)
-    @base_resource_path = resource_path + (attributes['id'].blank? ? "" : "/#{attributes['id']}")
+  def set_attributes(resource_path, singular_resource, attributes)
+    @base_resource_path = resource_path
+    @base_resource_path << "/#{attributes['id']}" unless singular_resource || attributes['id'].nil?
     @data_attributes = attributes.with_indifferent_access
   end
 
