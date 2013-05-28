@@ -2,8 +2,6 @@ $LOAD_PATH.unshift(File.dirname(__FILE__))
 
 ENV["ADAPTER_ENV"] ||= 'development'
 
-# TODO add Bundler.setup
-
 require 'sqlite3'
 require 'active_record'
 require 'yaml'
@@ -14,10 +12,22 @@ require 'active_support/core_ext/hash/indifferent_access'
 require 'api_client'
 require 'active_record_connection'
 require 'import'
+require 'adapter_monitor_notification'
 
 model_dir = File.join(File.dirname(__FILE__), 'model')
 $LOAD_PATH.unshift(model_dir)
 Dir[File.join(model_dir, "*.rb")].each {|file| require File.basename(file, '.rb') }
+
+# This code should use exit(1) or raise an exception for errors that should be considered a service "outage"
+#
+# Service outages should include things such as:
+# - Import folders not configured, resulting in no work being done
+# - Failure to connect to the Clearinghouse API
+# - Any unforeseen exception
+#
+# Normal operating errors such as an invalid import file or a row that generates an API error should
+# be logged and optionally cause a notification, but don't really constitute an "outage" (although it
+# would be nice if the user could configure what to consider a failure vs. a normal error).
 
 class AdapterSync
   LOG_FILE = File.expand_path(File.join('..', 'log', 'adapter_sync.log'), File.dirname(__FILE__))
@@ -46,21 +56,6 @@ class AdapterSync
   def poll
     # check for tickets in a CSV file to import
     import_tickets if @options[:import][:enabled]
-
-
-    # TODO adapter polls local system for new/modified tickets, pushes new tickets/changes
-    #
-    # How do we know which tickets and changes are new? Local cache or marked in database? We should try to avoid
-    # stashing Adapter-specific information in the provider system database because we don't really have control
-    # over it, so we will stash them locally, only after successful push.
-    #
-    # If possible, mark the ticket in the provider system as having been shared, but don't rely on these marks
-    #
-    # Local cache could just be a date last poll was run, but that might be unreliable.
-    #
-    # If the cache is empty it needs to look them up on the CH (or just try creating them and fail) -- loss of local
-    # cache should not prevent normal operation but duplicate tickets should not be created.
-
   rescue Exception => e
     @logger.error e.message + "\n" + e.backtrace.join("\n")
     raise
@@ -75,11 +70,7 @@ class AdapterSync
 
     # ensure import directory is configured and exists
     err_msg = import.check_directory(import_dir)
-    if err_msg
-      @logger.warn err_msg
-      @options[:import][:enabled]= false
-      return
-    end
+    raise err_msg if err_msg
 
     # check each file the import thinks it can work with to see if we imported it previously
     skips = []
@@ -102,7 +93,7 @@ class AdapterSync
         begin
           api_result = @clearinghouse.post(:trip_tickets, row)
         rescue Exception => e
-          # TODO should probably only treat logical errors as recoverable, e.g. a server model validation fails
+          # TODO raise exception if we could not connect to API or error is not a logic error (model validation failed)
           raise Import::RowError, "API error: #{e}"
         end
         log.info "Posted trip ticket to API, result #{api_result}"
@@ -115,11 +106,20 @@ class AdapterSync
 
     @logger.info "Imported #{import_results.length} files"
     import_results.each do |r|
-      # TODO send notification for files that failed (handled here or by Monitor service?)
       @logger.info r.to_s
       # as an extra layer of safety, record files that were imported so we can avoid reimporting them
       ImportedFile.create(r)
+      # send notifications for files that contained errors
+      if r.error? || r.row_errors.to_i > 0
+        msg = "Encountered #{r.row_errors} errors while importing file #{r.file_name} at #{r.created_at}:\\n#{r.error_msg}"
+        begin
+          AdapterNotification.new(error: msg).send
+        rescue Exception => e
+          @logger.error "Error notification failed, could not send email: #{e}"
+        end
+      end
     end
+
   end
 
   protected

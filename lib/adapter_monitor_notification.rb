@@ -1,46 +1,59 @@
 require 'rbconfig'
 require 'logger'
 require 'mail'
-
-# TODO make a worker base class or mixin that enforces some useful conventions
-# TODO make some basic libs to include in all modules with helpers stolen from Rails and elsewhere
-class Object
-  def to_sym
-    self
-  end
-end
-class Hash
-  def symbolize_keys
-    dup.symbolize_keys!
-  end
-  def symbolize_keys!
-    keys.each do |key|
-      self[key.to_sym] = delete(key)
-    end
-    self
-  end
-end
+require 'active_support/core_ext/hash/indifferent_access'
 
 CONFIG_FILE = File.expand_path(File.join('..', 'config', 'mail.yml'), File.dirname(__FILE__))
 LOG_FILE = File.expand_path(File.join('..', 'log', 'adapter_monitor_notification.log'), File.dirname(__FILE__))
 
-begin
-  mail_config = YAML::load(File.open(CONFIG_FILE)).symbolize_keys!
-  send_method = mail_config.delete(:delivery_method).to_sym || :smtp
-  Mail.defaults do
-    delivery_method send_method, mail_config
+class AdapterNotification
+
+  def initialize(options = {})
+    @options = (options || {}).with_indifferent_access
   end
 
-  logger = Logger.new(LOG_FILE, 'weekly')
+  def send
+    begin
+      config = YAML::load(File.open(CONFIG_FILE)).with_indifferent_access
 
-  # TODO get arguments from the command line
-  Mail.deliver do
-    to 'mtj@cmpj.org'
-    from 'adapter@cmpj.org'
-    subject 'Test notification'
-    body 'This is a test notification to see if we can alert ourselves via email in case of errors'
+      mail_config = config['connection']
+      message = config['message']
+
+      send_method = (mail_config.delete(:delivery_method) || :smtp).to_sym
+      Mail.defaults do
+        delivery_method send_method, mail_config
+      end
+
+      logger = Logger.new(LOG_FILE, 'weekly')
+
+      raise "ERROR message 'to' address not configured, cannot send notification" if message['to'].nil?
+
+      message['from'] ||= "noreply@rideconnection.org"
+      message['subject'] ||= "Adapter error notification"
+      message['body'] ||= "The Clearinghouse Adapter has encountered an error."
+      message['body'] << "\n#{@options[:error]}" if @options[:error]
+
+      Mail.deliver do
+        to message['to']
+        from message['from']
+        subject message['subject']
+        body message['body']
+      end
+
+    rescue Exception => e
+      logger.error e.message + "\n" + e.backtrace.join("\n")
+      raise
+    end
   end
-rescue Exception => e
-  logger.error e.message + "\n" + e.backtrace.join("\n")
-  exit 1
+end
+
+opts = Slop.parse do
+  banner 'Usage: adapter_monitor_notification.rb [options]'
+  on :a, :auto, 'Send email and exit ', argument: :optional
+  on :e, :error=, 'Error description', argument: :optional
+end
+
+if opts.auto?
+  notifier = AdapterNotification.new(opts.to_hash)
+  notifier.send
 end
