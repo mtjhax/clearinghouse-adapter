@@ -2,13 +2,16 @@ class TrackedTicket < ActiveRecord::Base
   # Attributes:
   #t.integer :origin_trip_id
   #t.integer :clearinghouse_id
+  #t.datetime :appointment_time
   #t.timestamps
 
-  # Ideas for attributes to support update tracking:
-  # boolean indicating if ticket was imported or pulled directly from database
-  # list of fields that were being tracked when ticket last synced
-  # hash / checksum of the tracked fields
-  # date origin row was last touched, if available
+  def self.find_or_create(origin_trip_id, appointment_time)
+    TrackedTicket.find_or_create_by_origin_trip_id_and_appointment_time(origin_trip_id, appointment_time)
+  end
+
+  def synced?
+    !clearinghouse_id.nil?
+  end
 
   # Other Clearinghouse trip ticket columns we may want to track:
   #
@@ -55,5 +58,4 @@ class TrackedTicket < ActiveRecord::Base
   #  t.string_array  "trip_funders",                         :limit => 255
   #  t.string        "customer_race"
   #  t.time          "earliest_pick_up_time"
-  #  t.datetime      "appointment_time"
 end

@@ -87,20 +87,23 @@ class AdapterSync
     import_results = import.from_folder(import_dir, output_dir, skips) do |row, log|
       if row[:origin_trip_id].nil?
         raise Import::RowError, "Imported row does not contain an origin_trip_id value"
-      elsif TrackedTicket.where(origin_trip_id: row[:origin_trip_id]).where('clearinghouse_id IS NOT NULL').count > 0
-        raise Import::RowError, "Trip ticket with ID #{row[:origin_trip_id]} already imported"
       else
-        begin
-          api_result = @clearinghouse.post(:trip_tickets, row)
-        rescue Exception => e
-          # TODO raise exception if we could not connect to API or error is not a logic error (model validation failed)
-          raise Import::RowError, "API error: #{e}"
+        trip = TrackedTicket.find_or_create(row[:origin_trip_id], row[:appointment_time])
+
+        unless trip.synced?
+          api_result = post_new_trip(row)
+          log.info "POST trip ticket with API, result #{api_result}"
+        else
+          # trip is already tracked, see if we need to update the CH
+          # Note: for now we just try an update and see what happens, we need to deal with error if no fields changed
+          api_result = put_trip_changes(row)
+          log.info "PUT trip ticket with API, result #{api_result}"
         end
-        log.info "Posted trip ticket to API, result #{api_result}"
         raise Import::RowError, "API result should be an array" unless api_result.is_a?(Array)
         raise Import::RowError, "API result is empty" unless api_result.length > 0
         raise Import::RowError, "API result does not contain an ID" if api_result[0]['id'].nil?
-        TrackedTicket.create(origin_trip_id: row[:origin_trip_id], clearinghouse_id: api_result[0]['id'])
+
+        trip.update(clearinghouse_id: api_result[0]['id'])
       end
     end
 
@@ -119,10 +122,27 @@ class AdapterSync
         end
       end
     end
-
   end
 
   protected
+
+  def post_new_trip(trip_hash)
+    begin
+      @clearinghouse.post(:trip_tickets, trip_hash)
+    rescue Exception => e
+      # TODO if exception indicates a duplicate object, we probably want to get the trip from the CH then try an update
+      raise Import::RowError, "API error on POST: #{e}"
+    end
+  end
+
+  def put_trip_changes(trip_hash)
+    begin
+      @clearinghouse.put(:trip_tickets, trip_hash)
+    rescue Exception => e
+      # TODO if exception indicates an error due to no changes, we should just ignore that error
+      raise Import::RowError, "API error on PUT: #{e}"
+    end
+  end
 
   def load_config(file)
     (YAML::load(File.open(file)) || {}).with_indifferent_access

@@ -12,8 +12,9 @@ class CreateAdapterTables < ActiveRecord::Migration
     end
 
     create_table :tracked_tickets do |t|
-      t.integer :origin_trip_id
       t.integer :clearinghouse_id
+      t.integer :origin_trip_id
+      t.datetime :appointment_time
       t.timestamps
     end
   end
