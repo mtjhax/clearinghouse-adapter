@@ -29,8 +29,8 @@ class AdapterNotification
       raise "ERROR message 'to' address not configured, cannot send notification" if message['to'].nil?
 
       message['from'] ||= "noreply@rideconnection.org"
-      message['subject'] ||= "Adapter error notification"
-      message['body'] ||= "The Clearinghouse Adapter has encountered an error."
+      message['subject'] ||= "Clearinghouse Adapter notification"
+      message['body'] ||= "The Clearinghouse Adapter has generated the following notification:"
       message['body'] << "\n#{@options[:error]}" if @options[:error]
 
       Mail.deliver do

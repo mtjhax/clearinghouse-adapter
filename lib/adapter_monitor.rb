@@ -12,13 +12,19 @@ ERROR_NOTIFIER = File.expand_path("adapter_monitor_notification.rb", File.dirnam
 LOG_FILE = File.expand_path(File.join('..', 'log', 'adapter_monitor.log'), File.dirname(__FILE__))
 ERROR_LOG_FILE = File.expand_path(File.join('..', 'log', 'adapter_monitor_errors.log'), File.dirname(__FILE__))
 
+OUTAGE_THRESHOLD = 10              # number of consecutive failures that indicate a service outage
+REPEAT_NOTIFICATION_LIMIT = 5      # minimum number of minutes between failures
+
 class Daemon
   def service_init
     devnull = File.open(File::NULL, 'w')
     $stdout.reopen(devnull, 'w')
     $stderr.reopen(devnull, 'w')
     @logger = Logger.new(LOG_FILE, 'weekly')
-    @error_count = 0
+    @errors_since_last_successful_poll = 0
+    @errors_since_last_notification = 0
+    @last_notification_time = nil
+    @service_outage = false
   end
 
   def service_main
@@ -29,7 +35,16 @@ class Daemon
           pid = spawn(SYNC_COMMAND, out:[ERROR_LOG_FILE, 'a'], err:[:child, :out], chdir: ADAPTER_DIRECTORY)
           pid, status = Process.wait2(pid)
           @logger.info "Worker process complete, pid #{pid} status #{status}"
-          handle_worker_error("Adapter worker process exited with status #{status}") if status != 0
+          if status == 0
+            @errors_since_last_successful_poll = 0
+            @errors_since_last_notification = 0
+            if @service_outage
+              @service_outage = false
+              send_service_restored_notification
+            end
+          else
+            handle_failure("Adapter worker process exited with status #{status}")
+          end
         rescue Exception => e
           handle_failure("Unhandled exception in AdapterMonitor: #{e.message + "\n" + e.backtrace.join("\n")}")
         end
@@ -47,19 +62,52 @@ class Daemon
   end
 
   def handle_failure(error_msg)
+    @errors_since_last_successful_poll += 1
+    @errors_since_last_notification += 1
     @logger.error error_msg
-    @error_count += 1
-    if @error_count == 1
-      @logger.info "Sending failure notification"
+
+    if !@service_outage && (notification_time_limit_achieved || service_outage)
       error_msg.gsub(/"/, '')
+      error_msg << "\nErrors since last successful poll: #{@errors_since_last_successful_poll}"
+      error_msg << "\nErrors since last notification: #{@errors_since_last_notification}"
+      if service_outage
+        @service_outage = true
+        @logger.error "Service outage detected, no additional notifications will be sent"
+        error_msg << "\nService outage detected, no additional notifications will be sent"
+      end
+
+      @logger.info "Sending failure notification"
       pid = spawn("\"#{RUBY}\" \"#{ERROR_NOTIFIER}\" -e \"#{error_msg}\"", out:[ERROR_LOG_FILE, 'a'], err:[:child, :out])
       pid, status = Process.wait2(pid)
       if status != 0
-        @logger.info "Error notification failed, check logs"
+        @logger.error "Notification failed, check logs"
       else
-        @logger.info "Error notification complete"
+        @logger.info "Notification complete"
+        @errors_since_last_notification = 0
+        @last_notification_time = Time.now
       end
     end
+  end
+
+  def send_service_restored_notification
+    @logger.info "Sending service restored notification"
+    msg = "Service outage has ended, polling restarted"
+    pid = spawn("\"#{RUBY}\" \"#{ERROR_NOTIFIER}\" -e \"#{msg}\"", out:[ERROR_LOG_FILE, 'a'], err:[:child, :out])
+    pid, status = Process.wait2(pid)
+    if status != 0
+      @logger.error "Notification failed, check logs"
+    else
+      @logger.info "Notification complete"
+      @last_notification_time = nil
+    end
+  end
+
+  def notification_time_limit_achieved
+    @last_notification_time.nil? || Time.now - @last_notification_time > REPEAT_NOTIFICATION_LIMIT * 60
+  end
+
+  def service_outage
+    @errors_since_last_successful_poll >= OUTAGE_THRESHOLD
   end
 end
 
