@@ -2,6 +2,7 @@ require 'rbconfig'
 require 'logger'
 require 'mail'
 require 'active_support/core_ext/hash/indifferent_access'
+require 'slop'
 
 CONFIG_FILE = File.expand_path(File.join('..', 'config', 'mail.yml'), File.dirname(__FILE__))
 LOG_FILE = File.expand_path(File.join('..', 'log', 'adapter_monitor_notification.log'), File.dirname(__FILE__))
