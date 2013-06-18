@@ -71,6 +71,16 @@ class ApiClient
     @data_attributes.to_s
   end
 
+  # if we want to use all hash methods on the class...
+  #def method_missing(method, *args)
+  #  @data_attributes.send(method, *args)
+  #end
+
+  # access to result hash
+  def data
+    @data_attributes
+  end
+
   protected
 
   def request(method, resource, additional_params = nil)
