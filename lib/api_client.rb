@@ -26,7 +26,7 @@ class ApiClient
     @private_key = @options.delete(:api_private_key)
 
     @base_resource_path = nil
-    @data_attributes = {}
+    @data_attributes = {}.with_indifferent_access
     @nonce_sequence = 0
   end
 
@@ -86,8 +86,11 @@ class ApiClient
   def request(method, resource, additional_params = nil)
     resource = flatten([@base_resource_path, resource])
     resource_name = singular_resource_name(resource)
-    params = signed_params({ resource_name => additional_params })
-    params = { params: params } if method == :get
+    if method == :get
+      params = { params: signed_params(additional_params) }
+    else
+      params = signed_params({ resource_name => additional_params })
+    end
     result = @site[versioned(resource)].send(method, params)
     # TODO consider rescuing RestClient exceptions and JSON-parsing e.response
     process_result(resource, result)
@@ -95,7 +98,7 @@ class ApiClient
 
   def process_result(resource, result)
     result = JSON.parse(result)
-    if @options[:raw]
+    if options[:raw]
       result
     else
       # convert raw results into dups of the current object with result data stored
@@ -129,7 +132,9 @@ class ApiClient
   def singular_resource_name(resource_path)
     # returns type of resource being accessed from its path
     # e.g. given 'trip_tickets/1/trip_ticket_comments/2' it should return 'trip_ticket_comment'
-    match = resource_path.match(/\/?([A-Za-z_-]+)[^A-Za-z_-]*$/)
+    # if path ends with two consecutive alphabetical segments, the last is assumed to be a custom action,
+    # e.g. "trip_tickets/1/trip_ticket_comments/most_recent" should still return 'trip_ticket_comment'
+    match = resource_path.match(/\/?([A-Za-z_-]+)(\/[A-Za-z_-]+)?[^A-Za-z_-]*$/)
     match[1].singularize if match
   end
 
