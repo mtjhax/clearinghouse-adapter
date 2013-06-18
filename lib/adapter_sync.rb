@@ -54,14 +54,33 @@ class AdapterSync
   end
 
   def poll
+    # Step 1 - sync local mirror of our Clearinghouse trips
+    replicate_clearinghouse
+
+    # Step 2 - push new and updated trip info to the Clearinghouse
+
     # check for tickets in a CSV file to import
-    import_tickets if @options[:import][:enabled]
+    import_tickets
+
   rescue Exception => e
     @logger.error e.message + "\n" + e.backtrace.join("\n")
     raise
   end
 
+  def replicate_clearinghouse
+    # 1. Get the exact time of the most recently updated/created trip/result/claim
+    last_updated_at = most_recent_tracked_update_time
+
+    # 2. Query CH for all trips/results/claims updated after that time where our provider is originator or a claimant
+
+
+    # 3. If no time, query all records (maybe just the ones that are not resolved, since they should not change again)
+
+    # 4. Perform a diff on each updated record and dump a report(s) of the changes
+  end
+
   def import_tickets
+    return unless @options[:import][:enabled]
     import_dir = @options[:import][:import_folder]
     output_dir = @options[:import][:completed_folder]
     import = Import.new
@@ -88,7 +107,10 @@ class AdapterSync
       if row[:origin_trip_id].nil?
         raise Import::RowError, "Imported row does not contain an origin_trip_id value"
       else
-        trip = TrackedTicket.find_or_create(row[:origin_trip_id], row[:appointment_time])
+        # trips on the provider are uniquely identified by trip ID and appointment time because some trip tickets are
+        # recycled, but these should represent new trips on the Clearinghouse and are stored as new trips in the
+        # Adapter so the corresponding Clearinghouse IDs can each be stored
+        trip = TripTicket.find_or_create_by_origin_trip_id_and_appointment_time(row[:origin_trip_id], row[:appointment_time])
 
         unless trip.synced?
           api_result = post_new_trip(row)
@@ -99,11 +121,10 @@ class AdapterSync
           api_result = put_trip_changes(row)
           log.info "PUT trip ticket with API, result #{api_result}"
         end
-        raise Import::RowError, "API result should be an array" unless api_result.is_a?(Array)
-        raise Import::RowError, "API result is empty" unless api_result.length > 0
-        raise Import::RowError, "API result does not contain an ID" if api_result[0]['id'].nil?
 
-        trip.update(clearinghouse_id: api_result[0]['id'])
+        raise Import::RowError, "API result does not contain an ID" if api_result[:id].nil?
+
+        trip.map_attributes(api_result.data).save!
       end
     end
 
@@ -113,8 +134,8 @@ class AdapterSync
       # as an extra layer of safety, record files that were imported so we can avoid reimporting them
       ImportedFile.create(r)
       # send notifications for files that contained errors
-      if r.error? || r.row_errors.to_i > 0
-        msg = "Encountered #{r.row_errors} errors while importing file #{r.file_name} at #{r.created_at}:\\n#{r.error_msg}"
+      if r[:error] || r[:row_errors].to_i > 0
+        msg = "Encountered #{r[:row_errors]} errors while importing file #{r[:file_name]} at #{r[:created_at]}:\\n#{r[:error_msg]}"
         begin
           AdapterNotification.new(error: msg).send
         rescue Exception => e
@@ -126,12 +147,25 @@ class AdapterSync
 
   protected
 
+  def most_recent_tracked_update_time
+    TripTicket.maximum('ch_updated_at')
+  end
+
+  def get_updated_trips
+    begin
+      @clearinghouse.get('trip_tickets/sync', trip_hash)
+    rescue Exception => e
+      # TODO if exception indicates a duplicate object, we probably want to get the trip from the CH then try an update
+      api_error "API error on POST: #{e}"
+    end
+  end
+
   def post_new_trip(trip_hash)
     begin
       @clearinghouse.post(:trip_tickets, trip_hash)
     rescue Exception => e
       # TODO if exception indicates a duplicate object, we probably want to get the trip from the CH then try an update
-      raise Import::RowError, "API error on POST: #{e}"
+      api_error "API error on POST: #{e}"
     end
   end
 
@@ -140,12 +174,26 @@ class AdapterSync
       @clearinghouse.put(:trip_tickets, trip_hash)
     rescue Exception => e
       # TODO if exception indicates an error due to no changes, we should just ignore that error
-      raise Import::RowError, "API error on PUT: #{e}"
+      api_error "API error on PUT: #{e}"
+    end
+  end
+
+  def api_error(message)
+    if ENV["ADAPTER_ENV"] == 'development'
+      # in development mode, don't suppress the original exception
+      raise
+    else
+      # TODO currently treating API errors as a recoverable row error, they probably warrant a notification
+      raise Import::RowError, message
     end
   end
 
   def load_config(file)
     (YAML::load(File.open(file)) || {}).with_indifferent_access
   end
+end
 
+if __FILE__ == $0
+  adapter_sync = AdapterSync.new
+  adapter_sync.poll
 end

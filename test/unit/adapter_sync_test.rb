@@ -14,7 +14,7 @@ describe AdapterSync do
   describe AdapterSync, "#poll" do
     it "skips import step if import is not enabled" do
       @adapter.options[:import][:enabled] = false
-      @adapter.expects(:import_tickets).never
+      Import.any_instance.expects(:from_folder).never
       @adapter.poll
     end
 
@@ -51,27 +51,24 @@ describe AdapterSync do
       remove_test_folders(@input_folder, @output_folder)
     end
 
-    it "skips import if directory is not configured" do
-      Import.any_instance.expects(:from_folder).never
-      @adapter.options[:import][:import_folder] = nil
-      @adapter.import_tickets
+    it "raises a runtime error if import directory is not configured" do
+      Proc.new do
+        @adapter.options[:import][:import_folder] = nil
+        @adapter.import_tickets
+      end.must_raise(RuntimeError)
     end
 
-    it "skips import if directory does not exist" do
-      Import.any_instance.expects(:from_folder).never
-      @adapter.options[:import][:import_folder] = 'tmp/__i/__dont/__exist'
-      @adapter.import_tickets
-    end
-
-    it "disables import if directory is invalid" do
-      @adapter.options[:import][:import_folder] = nil
-      @adapter.import_tickets
-      @adapter.options[:import][:enabled].must_equal false
+    it "raises a runtime error if import directory does not exist" do
+      Proc.new do
+        @adapter.options[:import][:import_folder] = 'tmp/__i/__dont/__exist'
+        @adapter.import_tickets
+      end.must_raise(RuntimeError)
     end
 
     it "sends each imported row to the Clearinghouse API" do
       file = create_csv(@input_folder, 'test1.csv', @minimum_trip_attributes.keys, [@minimum_trip_attributes.values])
-      ApiClient.any_instance.expects(:post).once.returns([{ 'id' => 1379 }])
+      stub_result = ApiClient.new.tap {|result| result[:id] = 1379 }
+      ApiClient.any_instance.expects(:post).once.returns(stub_result)
       @adapter.import_tickets
     end
 
@@ -86,7 +83,8 @@ describe AdapterSync do
       file = create_csv(@input_folder, 'test1.csv', @minimum_trip_attributes.keys, [@minimum_trip_attributes.values])
       file_size = File.size(file)
       file_time = File.mtime(file)
-      ApiClient.any_instance.stubs(:post).returns([{ 'id' => 1379 }])
+      stub_result = ApiClient.new.tap {|result| result[:id] = 1379 }
+      ApiClient.any_instance.expects(:post).once.returns(stub_result)
       @adapter.import_tickets
       ImportedFile.count.must_equal 1
       imported_file = ImportedFile.first
@@ -98,12 +96,13 @@ describe AdapterSync do
 
     it "tracks imported rows to prevent reimport" do
       file = create_csv(@input_folder, 'test1.csv', @minimum_trip_attributes.keys, [@minimum_trip_attributes.values])
-      ApiClient.any_instance.stubs(:post).returns([{ 'id' => 1379 }])
+      stub_result = ApiClient.new.tap {|result| result[:id] = 1379 }
+      ApiClient.any_instance.expects(:post).once.returns(stub_result)
       @adapter.import_tickets
-      TrackedTicket.count.must_equal 1
-      tracked_ticket = TrackedTicket.first
-      tracked_ticket.origin_trip_id.must_equal @minimum_trip_attributes[:origin_trip_id]
-      tracked_ticket.clearinghouse_id.must_equal 1379
+      TripTicket.count.must_equal 1
+      trip = TripTicket.first
+      trip.origin_trip_id.must_equal @minimum_trip_attributes[:origin_trip_id]
+      trip.ch_id.must_equal 1379
     end
 
     it "marks rows as errors if they do not contain an origin_trip_id" do
