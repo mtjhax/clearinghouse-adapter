@@ -1,3 +1,8 @@
 import:
-  new_folder: tmp/import
-  done_folder: tmp/import_done
+  enabled: true
+  import_folder: tmp/import
+  completed_folder: tmp/import_done
+
+export:
+  enabled: true
+  export_folder: tmp/export

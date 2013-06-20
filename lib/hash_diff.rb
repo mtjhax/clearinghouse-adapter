@@ -3,7 +3,12 @@ require 'active_support/core_ext/hash'
 
 module HashDiff
 
-  # hash_diff returns a hash containing each entry in modified_hash that varies from original_hash.
+  # hash_diff returns a hash containing each entry in modified_hash that varies from original_hash. this method is
+  # oriented towards working with model attributes and not completely general-purpose (certain nested structures that
+  # are unlikely to occur in an ActiveRecord model are not handled, such as arrays containing nested arrays).
+  #
+  # The returned hash does not have indifferent access. HashWithIndifferentAccess converts all keys to strings and
+  # the hash_diff method strives to keep the keys the same type that was input.
   #
   # New and modified hashes in the result have a key added to indicate if they did not exist in original_hash or
   # existed but contained changes: :_new => true or :_modified => true, respectively. For example:
