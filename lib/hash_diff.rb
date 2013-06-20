@@ -5,13 +5,12 @@ module HashDiff
 
   # hash_diff returns a hash containing each entry in modified_hash that varies from original_hash.
   #
-  # New and modified simple values are copied into the new hash. New and modified hashes are nested inside a
-  # hash with key :_new or :_modified to indicate if the object in question did not exist in original_hash, or existed
-  # but contained changes, respectively. For example:
+  # New and modified hashes in the result have a key added to indicate if they did not exist in original_hash or
+  # existed but contained changes: :_new => true or :_modified => true, respectively. For example:
   #
   # original_hash: { people: 1, tom: { age: 20 }}
   # modified_hash: { people: 2, tom: { age: 21 }, sally: { age: 24 }}
-  # result:        { :_modified => { people: 2, tom: { :_modified => { age: 21 }}, sally: { :_new => { age: 24 }}}}
+  # result:        { :_modified => true, people: 2, tom: { :_modified => true, age: 21 }, sally: { :_new => true, age: 24 }}
   #
   # hash_diff recurses into nested structures, only including key-value pairs in the nested structure
   # that are modified and omitting the entire nested structure if it is unchanged.
@@ -32,7 +31,7 @@ module HashDiff
 
   def hash_diff(original_hash, modified_hash, *required_keys)
     return nil if modified_hash.blank?
-    return { :_new => modified_hash } if original_hash.blank?
+    return modified_hash.merge(:_new => true) if original_hash.blank?
 
     new_hash = {}
     diff_seen = false
@@ -55,8 +54,32 @@ module HashDiff
       new_hash[key] = result if result.present?
     end
 
-    new_hash.presence && diff_seen.presence && { :_modified => new_hash }  # return nil or the expression on the right
+    new_hash.presence && diff_seen.presence && new_hash.merge(:_modified => true)  # return nil or the expression on the right
   end
+
+  # for convenience, removes the :_new and :_modified keys from a diff_hash result
+
+  def clean_diff(diff_hash)
+    new_hash = {}
+    diff_hash.each do |key, val|
+      unless [:_new, :_modified, '_new', '_modified'].include?(key)
+        result = case val
+          when Hash
+            clean_diff(val)
+          when Array
+            new_array = []
+            val.each {|entry| new_array << (entry.is_a?(Hash) ? clean_diff(entry) : entry) }
+            new_array
+          else
+            val
+        end
+        new_hash[key] = result
+      end
+    end
+    new_hash
+  end
+
+  protected
 
   # array_diff is a helper to just handle comparing array sub-elements
   # nested object hashes are compared by ID
