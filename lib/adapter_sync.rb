@@ -49,7 +49,7 @@ class AdapterSync
     @options = opts.presence || load_config(CONFIG_FILE)
 
     @errors = []
-    @trip_updates = @claim_updates = @comment_updates = @result_updates = []
+    @trip_updates, @claim_updates, @comment_updates, @result_updates = [[], [], [], []]
 
     # open the database, creating it if necessary, and make sure up to date with latest migrations
     @connection = ActiveRecordConnection.new(logger, load_config(DB_CONFIG_FILE)[ENV["ADAPTER_ENV"]])
@@ -63,7 +63,7 @@ class AdapterSync
 
   def poll
     errors = []
-    trip_updates = claim_updates = comment_updates = result_updates = []
+    trip_updates, claim_updates, comment_updates, result_updates = [[], [], [], []]
     replicate_clearinghouse
     export_changes
     report_sync_errors
@@ -71,6 +71,47 @@ class AdapterSync
   rescue Exception => e
     logger.error e.message + "\n" + e.backtrace.join("\n")
     raise
+  end
+
+  def replicate_clearinghouse
+    last_updated_at = most_recent_tracked_update_time
+    updated_trips = get_updated_clearinghouse_trips(last_updated_at)
+    logger.debug "Retrieved #{updated_trips.length} updated trips from API"
+    updated_trips.each {|trip_hash| process_updated_clearinghouse_trip(trip_hash) }
+  end
+
+  # TODO refactor to a separate Export class
+  def export_changes
+    return unless options[:export][:enabled]
+    export_dir = options[:export][:export_folder]
+    raise "Export folder not configured, will not export new changes detected on the Clearinghouse" if export_dir.blank?
+    raise "Export folder #{export_dir} does not exist" if Dir[export_dir].empty?
+
+    # flatten nested structures in the updated trips
+    flattened_trips, flattened_claims, flattened_comments, flattened_results = [[], [], [], []]
+    trip_updates.each { |x| flattened_trips << flatten_hash(x) }
+    claim_updates.each { |x| flattened_claims << flatten_hash(x) }
+    comment_updates.each { |x| flattened_comments << flatten_hash(x) }
+    result_updates.each { |x| flattened_results << flatten_hash(x) }
+
+    # create combined lists of keys since each change set can include different updated columns
+    trip_keys, claim_keys, comment_keys, result_keys = [[], [], [], []]
+    flattened_trips.each { |x| trip_keys |= x.stringify_keys.keys }
+    flattened_claims.each { |x| claim_keys |= x.stringify_keys.keys }
+    flattened_comments.each { |x| comment_keys |= x.stringify_keys.keys }
+    flattened_results.each { |x| result_keys |= x.stringify_keys.keys }
+
+    # create file names for exports
+    timestamp = Time.zone.now.strftime("%Y-%m-%d.%H%M%S")
+    trip_file = File.join(export_dir, "trip_tickets.#{timestamp}.csv")
+    claim_file = File.join(export_dir, "trip_claims.#{timestamp}.csv")
+    comment_file = File.join(export_dir, "trip_ticket_comments.#{timestamp}.csv")
+    result_file = File.join(export_dir, "trip_results.#{timestamp}.csv")
+
+    export_csv(trip_file, trip_keys, flattened_trips)
+    export_csv(claim_file, claim_keys, flattened_claims)
+    export_csv(comment_file, comment_keys, flattened_comments)
+    export_csv(result_file, result_keys, flattened_results)
   end
 
   # TODO this needs refactoring as its too long and complex
@@ -157,59 +198,10 @@ class AdapterSync
 
   protected
 
-  def replicate_clearinghouse
-    last_updated_at = most_recent_tracked_update_time
-    updated_trips = get_updated_clearinghouse_trips(last_updated_at)
-    logger.debug "Retrieved #{updated_trips.length} updated trips from API"
-    updated_trips.each {|trip_hash| process_updated_clearinghouse_trip(trip_hash) }
-  end
-
-  # TODO refactor to a separate Export class
-  def export_changes
-    return unless options[:export][:enabled]
-    export_dir = options[:export][:export_folder]
-    raise "Export folder not configured, will not export new changes detected on the Clearinghouse" if export_dir.blank?
-    raise "Export folder #{export_dir} does not exist" if Dir[export_dir].empty?
-
-    # flatten nested structures in the updated trips
-    flattened_trips = flattened_claims = flattened_comments = flattened_results = []
-    trip_updates.each { |x| flattened_trips << flatten_hash(x) }
-    claim_updates.each { |x| flattened_claims << flatten_hash(x) }
-    comment_updates.each { |x| flattened_comments << flatten_hash(x) }
-    result_updates.each { |x| flattened_results << flatten_hash(x) }
-
-    # create combined lists of keys since each change set can include different updated columns
-    trip_keys = claim_keys = comment_keys = result_keys = []
-    flattened_trips.each { |x| trip_keys |= x.stringify_keys.keys }
-    flattened_claims.each { |x| claim_keys |= x.stringify_keys.keys }
-    flattened_comments.each { |x| comment_keys |= x.stringify_keys.keys }
-    flattened_results.each { |x| result_keys |= x.stringify_keys.keys }
-
-    # create file names for exports
-    timestamp = Time.zone.now.strftime("%Y-%m-%d.%H%M%S")
-    trip_file = File.join(export_dir, "trip_tickets.#{timestamp}.csv")
-    claim_file = File.join(export_dir, "trip_claims.#{timestamp}.csv")
-    comment_file = File.join(export_dir, "trip_ticket_comments.#{timestamp}.csv")
-    result_file = File.join(export_dir, "trip_results.#{timestamp}.csv")
-
-    CSV.open(trip_file, headers: trip_keys, write_headers: true) do |csv|
-      flattened_trips.each do |trip|
-        csv << trip_keys.map { |key| trip[key] }
-      end
-    end
-    CSV.open(claim_file, headers: claim_keys, write_headers: true) do |csv|
-      flattened_claims.each do |claim|
-        csv << claim_keys.map { |key| claim[key] }
-      end
-    end
-    CSV.open(comment_file, headers: comment_keys, write_headers: true) do |csv|
-      flattened_comments.each do |comment|
-        csv << comment_keys.map { |key| comment[key] }
-      end
-    end
-    CSV.open(result_file, headers: result_keys, write_headers: true) do |csv|
-      flattened_results.each do |result|
-        csv << result_keys.map { |key| result[key] }
+  def export_csv(filename, headers, data)
+    if data.present?
+      CSV.open(filename, headers: headers, write_headers: true) do |csv|
+        data.each {|result| csv << headers.map { |key| result[key] }}
       end
     end
   end
@@ -242,7 +234,7 @@ class AdapterSync
   # TODO if since_time nil, maybe omit resolved trips from API query since they should not change again
 
   def get_updated_clearinghouse_trips(since_time)
-    time_str = since_time.is_a?(String) ? since_time : since_time.strftime('%Y-%m-%d %H:%M:%S.%6N')
+    time_str = since_time.presence && (since_time.is_a?(String) ? since_time : since_time.strftime('%Y-%m-%d %H:%M:%S.%6N'))
     begin
       @clearinghouse.get('trip_tickets/sync', updated_since: time_str)
     rescue Exception => e

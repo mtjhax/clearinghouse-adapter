@@ -7,29 +7,60 @@ describe AdapterSync do
   include ImportHelpers
 
   before do
-    @adapter = AdapterSync.new(import: { enabled: true }, export: { enabled: true })
+    @input_folder = 'tmp/_import_test'
+    @output_folder = 'tmp/_import_test_out'
+    @export_folder = 'tmp/_export_test'
+    FileUtils.mkpath @input_folder
+    FileUtils.mkpath @output_folder
+    FileUtils.mkpath @export_folder
+    @adapter_options = {
+        import: { enabled: true, import_folder: @input_folder, completed_folder: @output_folder },
+        export: { enabled: true, export_folder: @export_folder }
+    }
+    @adapter = AdapterSync.new(@adapter_options)
     DatabaseCleaner.clean_with(:truncation)
   end
 
-  describe AdapterSync, "#poll" do
-    it "replicates changes from the Clearinghouse"
-    it "skips export step if not enabled"
-    it "exports replicated changes as CSV files"
-    it "reports replication errors"
+  after do
+    remove_test_folders(@input_folder, @output_folder, @export_folder)
+  end
 
-    it "skips import step if not enabled" do
-      @adapter.options[:import][:enabled] = false
-      @adapter.stubs(:replicate_clearinghouse)
-      @adapter.stubs(:export_changes)
-      Import.any_instance.expects(:from_folder).never
+  describe AdapterSync, "#poll" do
+    it "replicates changes from the Clearinghouse" do
+      ApiClient.any_instance.expects(:get).with('trip_tickets/sync', has_key(:updated_since)).once.returns([])
+      @adapter.replicate_clearinghouse
+    end
+
+    it "skips export step if not enabled" do
+      @adapter.options[:export][:enabled] = false
+      @adapter.expects(:export_csv).never
+      @adapter.export_changes
+    end
+
+    it "exports replicated changes as CSV files" do
+      trip_changes = { 'update_type' => 'modified', 'id' => 1, 'customer_first_name' => 'Bob' }
+      expected_headers = [ 'update_type', 'id', 'customer_first_name' ]
+      @adapter.trip_updates = [ trip_changes ]
+      @adapter.expects(:export_csv).with(is_a(String), includes(*expected_headers), [trip_changes]).once
+      @adapter.stubs(:export_csv).with(is_a(String), [], [])
+      @adapter.export_changes
+    end
+
+    it "reports replication errors" do
+      @adapter.stubs(:get_updated_clearinghouse_trips).returns([ {'this' => 'hash', 'lacks' => 'an id key'} ])
+      AdapterNotification.any_instance.expects(:send).once
       @adapter.poll
     end
 
+    it "skips import step if not enabled" do
+      @adapter.options[:import][:enabled] = false
+      Import.any_instance.expects(:from_folder).never
+      @adapter.import_tickets
+    end
+
     it "attempts to import flat files" do
-      @adapter.stubs(:replicate_clearinghouse)
-      @adapter.stubs(:export_changes)
-      @adapter.expects(:import_tickets).once
-      @adapter.poll
+      Import.any_instance.expects(:importable_files).with(@adapter_options[:import][:import_folder]).at_least_once.returns([])
+      @adapter.import_tickets
     end
   end
 
@@ -44,19 +75,13 @@ describe AdapterSync do
 
   describe AdapterSync, "#export_changes" do
     it "raises a runtime error if export directory is not configured" do
-      Proc.new do
-        @adapter.options[:export][:export_folder] = nil
-        @adapter.stubs(:replicate_clearinghouse)
-        @adapter.poll
-      end.must_raise(RuntimeError)
+      @adapter.options[:export][:export_folder] = nil
+      Proc.new { @adapter.export_changes }.must_raise(RuntimeError)
     end
 
     it "raises a runtime error if export directory does not exist" do
-      Proc.new do
-        @adapter.options[:export][:export_folder] = 'tmp/__i/__dont/__exist'
-        @adapter.stubs(:replicate_clearinghouse)
-        @adapter.poll
-      end.must_raise(RuntimeError)
+      @adapter.options[:export][:export_folder] = 'tmp/__i/__dont/__exist'
+      Proc.new { @adapter.export_changes }.must_raise(RuntimeError)
     end
 
     it "outputs new and modified trip tickets to a CSV file"
@@ -70,11 +95,6 @@ describe AdapterSync do
 
   describe AdapterSync, "#import_tickets" do
     before do
-      @input_folder = 'tmp/_import_test'
-      @output_folder = 'tmp/_import_test_out'
-      FileUtils.mkpath @input_folder
-      FileUtils.mkpath @output_folder
-      @adapter = AdapterSync.new(import: { enabled: true, import_folder: @input_folder, completed_folder: @output_folder })
       @minimum_trip_attributes = {
         origin_trip_id: 111,
         origin_customer_id: 222,
@@ -91,22 +111,14 @@ describe AdapterSync do
       }
     end
 
-    after do
-      remove_test_folders(@input_folder, @output_folder)
-    end
-
     it "raises a runtime error if import directory is not configured" do
-      Proc.new do
-        @adapter.options[:import][:import_folder] = nil
-        @adapter.import_tickets
-      end.must_raise(RuntimeError)
+      @adapter.options[:import][:import_folder] = nil
+      Proc.new { @adapter.import_tickets }.must_raise(RuntimeError)
     end
 
     it "raises a runtime error if import directory does not exist" do
-      Proc.new do
-        @adapter.options[:import][:import_folder] = 'tmp/__i/__dont/__exist'
-        @adapter.import_tickets
-      end.must_raise(RuntimeError)
+      @adapter.options[:import][:import_folder] = 'tmp/__i/__dont/__exist'
+      Proc.new { @adapter.import_tickets }.must_raise(RuntimeError)
     end
 
     it "adds files that were imported previously to the skip_files argument" do
