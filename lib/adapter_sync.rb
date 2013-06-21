@@ -65,15 +65,14 @@ class AdapterSync
     trip_updates = claim_updates = comment_updates = result_updates = []
     replicate_clearinghouse
     export_changes
-
+    report_sync_errors
     import_tickets
-    # TODO Step 3 - report collected errors via email notification and clear errors array
   rescue Exception => e
     logger.error e.message + "\n" + e.backtrace.join("\n")
     raise
   end
 
-  # TODO this needs refactoring as its too long and difficult to read and maintain
+  # TODO this needs refactoring as its too long and complex
   def import_tickets
     return unless options[:import][:enabled]
     import_dir = options[:import][:import_folder]
@@ -102,6 +101,20 @@ class AdapterSync
       if row[:origin_trip_id].nil?
         raise Import::RowError, "Imported row does not contain an origin_trip_id value"
       else
+        # support nested values for :customer_address, :pick_up_location, :drop_off_location, :trip_result
+        # these can be included in the CSV file with the object name prepended, e.g. 'trip_result_outcome'
+        # they are removed from the row, then added back as nested objects, e.g.: row[:trip_result_attributes] = { ... })
+
+        customer_address_hash = row.select {|k, v| row.delete(k) || true if k.to_s.start_with?('customer_address_') }
+        pick_up_location_hash = row.select {|k, v| row.delete(k) || true if k.to_s.start_with?('pick_up_location_') }
+        drop_off_location_hash = row.select {|k, v| row.delete(k) || true if k.to_s.start_with?('drop_off_location_') }
+        trip_result_hash = row.select {|k, v| row.delete(k) || true if k.to_s.start_with?('trip_result_') }
+
+        row['customer_address_attributes'] = customer_address_hash if customer_address_hash.present?
+        row['pick_up_location_attributes'] = pick_up_location_hash if pick_up_location_hash.present?
+        row['drop_off_location_attributes'] = drop_off_location_hash if drop_off_location_hash.present?
+        row['trip_result_attributes'] = trip_result_hash if trip_result_hash.present?
+
         # trips on the provider are uniquely identified by trip ID and appointment time because some trip tickets are
         # recycled, but these should represent new trips on the Clearinghouse and are stored as new trips in the
         # Adapter so the corresponding Clearinghouse IDs can each be stored
@@ -129,6 +142,7 @@ class AdapterSync
       # as an extra layer of safety, record files that were imported so we can avoid reimporting them
       ImportedFile.create(r)
       # send notifications for files that contained errors
+      # TODO combine import error reporting code with sync error code (see report_sync_errors method)
       if r[:error] || r[:row_errors].to_i > 0
         msg = "Encountered #{r[:row_errors]} errors while importing file #{r[:file_name]} at #{r[:created_at]}:\\n#{r[:error_msg]}"
         begin
@@ -231,7 +245,6 @@ class AdapterSync
     begin
       @clearinghouse.get('trip_tickets/sync', updated_since: time_str)
     rescue Exception => e
-      # TODO if exception indicates a duplicate object, we probably want to get the trip from the CH then try an update
       api_error "API error on GET: #{e}"
     end
   end
@@ -299,7 +312,6 @@ class AdapterSync
       # in development mode, don't suppress the original exception
       raise
     else
-      # TODO currently treating API errors as a recoverable row error, they probably warrant a notification
       raise Import::RowError, message
     end
   end
@@ -307,6 +319,18 @@ class AdapterSync
   def load_config(file)
     (YAML::load(File.open(file)) || {}).with_indifferent_access
   end
+
+  def report_sync_errors
+    unless errors.blank?
+      msg = "Encountered #{errors.length} errors while syncing with the Ride Clearinghouse:\\n" << errors.join("\\n")
+      begin
+        AdapterNotification.new(error: msg).send
+      rescue Exception => e
+        logger.error "Error notification failed, could not send email: #{e}"
+      end
+    end
+  end
+
 end
 
 if __FILE__ == $0
