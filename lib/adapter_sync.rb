@@ -45,10 +45,11 @@ class AdapterSync
   attr_accessor :options, :logger, :errors, :trip_updates, :claim_updates, :comment_updates, :result_updates
 
   def initialize(opts = {})
-    logger = Logger.new(LOG_FILE, 'weekly')
-    options = load_config(CONFIG_FILE).merge(opts)
-    errors = []
-    trip_updates = claim_updates = comment_updates = result_updates = []
+    @logger = Logger.new(LOG_FILE, 'weekly')
+    @options = opts.presence || load_config(CONFIG_FILE)
+
+    @errors = []
+    @trip_updates = @claim_updates = @comment_updates = @result_updates = []
 
     # open the database, creating it if necessary, and make sure up to date with latest migrations
     @connection = ActiveRecordConnection.new(logger, load_config(DB_CONFIG_FILE)[ENV["ADAPTER_ENV"]])

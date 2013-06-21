@@ -7,21 +7,65 @@ describe AdapterSync do
   include ImportHelpers
 
   before do
-    @adapter = AdapterSync.new(import: { enabled: true })
+    @adapter = AdapterSync.new(import: { enabled: true }, export: { enabled: true })
     DatabaseCleaner.clean_with(:truncation)
   end
 
   describe AdapterSync, "#poll" do
-    it "skips import step if import is not enabled" do
+    it "replicates changes from the Clearinghouse"
+    it "skips export step if not enabled"
+    it "exports replicated changes as CSV files"
+    it "reports replication errors"
+
+    it "skips import step if not enabled" do
       @adapter.options[:import][:enabled] = false
+      @adapter.stubs(:replicate_clearinghouse)
+      @adapter.stubs(:export_changes)
       Import.any_instance.expects(:from_folder).never
       @adapter.poll
     end
 
     it "attempts to import flat files" do
+      @adapter.stubs(:replicate_clearinghouse)
+      @adapter.stubs(:export_changes)
       @adapter.expects(:import_tickets).once
       @adapter.poll
     end
+  end
+
+  describe AdapterSync, "#replicate_clearinghouse" do
+    it "requests trips updated since most recent tracked updated_at time"
+    it "requests all trips if there are no locally tracked trips"
+    it "stores new and modified trips in the trip_updates instance variable"
+    it "stores new and modified trip claims in the claim_updates instance variable"
+    it "stores new and modified trip comments in the comment_updates instance variable"
+    it "stores new and modified trip results in the result_updates instance variable"
+  end
+
+  describe AdapterSync, "#export_changes" do
+    it "raises a runtime error if export directory is not configured" do
+      Proc.new do
+        @adapter.options[:export][:export_folder] = nil
+        @adapter.stubs(:replicate_clearinghouse)
+        @adapter.poll
+      end.must_raise(RuntimeError)
+    end
+
+    it "raises a runtime error if export directory does not exist" do
+      Proc.new do
+        @adapter.options[:export][:export_folder] = 'tmp/__i/__dont/__exist'
+        @adapter.stubs(:replicate_clearinghouse)
+        @adapter.poll
+      end.must_raise(RuntimeError)
+    end
+
+    it "outputs new and modified trip tickets to a CSV file"
+    it "outputs new and modified trip claims to a CSV file"
+    it "outputs new and modified trip comments to a CSV file"
+    it "outputs new and modified trip results to a CSV file"
+  end
+
+  describe AdapterSync, "#report_sync_errors" do
   end
 
   describe AdapterSync, "#import_tickets" do
@@ -63,13 +107,6 @@ describe AdapterSync do
         @adapter.options[:import][:import_folder] = 'tmp/__i/__dont/__exist'
         @adapter.import_tickets
       end.must_raise(RuntimeError)
-    end
-
-    it "sends each imported row to the Clearinghouse API" do
-      file = create_csv(@input_folder, 'test1.csv', @minimum_trip_attributes.keys, [@minimum_trip_attributes.values])
-      stub_result = ApiClient.new.tap {|result| result[:id] = 1379 }
-      ApiClient.any_instance.expects(:post).once.returns(stub_result)
-      @adapter.import_tickets
     end
 
     it "adds files that were imported previously to the skip_files argument" do
@@ -126,10 +163,20 @@ describe AdapterSync do
       imported_file.row_errors.must_equal 1
     end
 
-    # TODO ticket tracking and update features not yet added
-    #it "updates the ticket on the clearinghouse if it already exists"
-    #it "uses the local database to determine if a tracked ticket has been modified"
-    # etc.
+    it "supports import of nested location objects"
+    it "supports import of nested trip_result object"
+    it "uses origin_trip_id and appointment_time to find trips that are already being tracked"
 
+    it "sends new trips to the Clearinghouse API with POST" do
+      file = create_csv(@input_folder, 'test1.csv', @minimum_trip_attributes.keys, [@minimum_trip_attributes.values])
+      stub_result = ApiClient.new.tap {|result| result[:id] = 1379 }
+      ApiClient.any_instance.expects(:post).once.returns(stub_result)
+      @adapter.import_tickets
+    end
+
+    it "creates new trips in the local database"
+    it "updates existing trips on the Clearinghouse with PUT"
+    it "updates tracked trips in the local database with changes"
+    it "sends notifications for files that contained errors"
   end
 end
