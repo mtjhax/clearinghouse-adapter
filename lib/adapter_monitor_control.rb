@@ -13,15 +13,15 @@ if ARGV[0] == "install"
   # TODO provide ability to update the service
 
   Service.create(
-    :service_name => 'adapter_test_service',
+    :service_name => 'ride_clearinghouse_adapter',
     :host => nil,
     :service_type => Service::WIN32_OWN_PROCESS,
-    :description => 'A proof of concept for the Clearinghouse Adapter',
+    :description => 'Simplifies integration with the Ride Clearinghouse web service.',
     :start_type => Service::AUTO_START,
     :error_control => Service::ERROR_NORMAL,
     :binary_path_name => "\"#{RUBY}\" \"#{TARGET}\"",
     :service_start_name => 'LocalSystem',
-    :display_name => 'Adapter Test Service'
+    :display_name => 'Ride Clearinghouse Adapter'
   )
   puts "Done."
 elsif ARGV[0] == "remove"
