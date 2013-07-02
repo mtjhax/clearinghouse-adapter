@@ -26,7 +26,7 @@ if ARGV[0] == "install"
   puts "Done."
 elsif ARGV[0] == "remove"
   puts "Removing service..."
-  Service.delete('adapter_test_service')
+  Service.delete('ride_clearinghouse_adapter')
   puts "Done."
 else
   puts "Command not recognized, use install or remove."
