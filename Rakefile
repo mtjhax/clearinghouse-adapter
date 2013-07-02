@@ -9,5 +9,5 @@ end
 
 desc "Sync new trips and updates with the Clearinghouse"
 task :adapter_sync do
-  ruby "-e \"require './lib/adapter_sync'; AdapterSync.new.poll\""
+  ruby "-Ilib -e \"require 'adapter_sync'; AdapterSync.new.poll\""
 end

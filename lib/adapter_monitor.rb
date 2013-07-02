@@ -5,9 +5,10 @@ require 'logger'
 include Win32
 
 RUBY = File.join(RbConfig::CONFIG['bindir'], RbConfig::CONFIG['ruby_install_name'])
+RAKE = File.join(RbConfig::CONFIG['bindir'], 'rake')
 
-ADAPTER_DIRECTORY = File.expand_path(File.dirname(__FILE__))
-SYNC_COMMAND = "rake adapter_sync"
+ADAPTER_DIRECTORY = File.expand_path(File.join(File.dirname(__FILE__), '..'))
+SYNC_COMMAND = %Q{"#{RUBY}" "#{RAKE}" adapter_sync}
 ERROR_NOTIFIER = File.expand_path("adapter_monitor_notification.rb", File.dirname(__FILE__))
 LOG_FILE = File.expand_path(File.join('..', 'log', 'adapter_monitor.log'), File.dirname(__FILE__))
 ERROR_LOG_FILE = File.expand_path(File.join('..', 'log', 'adapter_monitor_errors.log'), File.dirname(__FILE__))
@@ -30,7 +31,7 @@ class Daemon
   def service_main
     begin
       while running?
-        @logger.info "Starting sync worker..."
+        @logger.info "Starting sync worker with command [#{SYNC_COMMAND}] in directory [#{ADAPTER_DIRECTORY}]..."
         begin
           pid = spawn(SYNC_COMMAND, out:[ERROR_LOG_FILE, 'a'], err:[:child, :out], chdir: ADAPTER_DIRECTORY)
           pid, status = Process.wait2(pid)
