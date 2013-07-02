@@ -18,7 +18,9 @@ rdoc
 spec/reports
 test/tmp
 test/version_tmp
-tmp
+tmp/**/*.log
+tmp/**/*.csv
+tmp/**/*.txt
 
 # YARD artifacts
 .yardoc
