@@ -12,7 +12,7 @@ coverage
 db/*.sqlite3
 InstalledFiles
 lib/bundler/man
-log
+log/*.log
 pkg
 rdoc
 spec/reports
