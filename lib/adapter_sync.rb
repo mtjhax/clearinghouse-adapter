@@ -77,7 +77,7 @@ class AdapterSync
     last_updated_at = most_recent_tracked_update_time
     updated_trips = get_updated_clearinghouse_trips(last_updated_at)
     logger.debug "Retrieved #{updated_trips.length} updated trips from API"
-    updated_trips.each {|trip_hash| process_updated_clearinghouse_trip(trip_hash) }
+    updated_trips.each {|trip| process_updated_clearinghouse_trip(trip.data) }
   end
 
   # TODO refactor to a separate Export class
@@ -200,7 +200,7 @@ class AdapterSync
 
   def export_csv(filename, headers, data)
     if data.present?
-      CSV.open(filename, headers: headers, write_headers: true) do |csv|
+      CSV.open(filename, 'wb', headers: headers, write_headers: true) do |csv|
         data.each {|result| csv << headers.map { |key| result[key] }}
       end
     end

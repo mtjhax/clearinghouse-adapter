@@ -54,6 +54,7 @@ class Import
     log "Importing #{file}"
     csv = CSV.open(file, headers: true, return_headers: false)
     data = csv.read
+    csv.close
     if block_given?
       log "Processing #{data.length} rows"
       row_count = 0
