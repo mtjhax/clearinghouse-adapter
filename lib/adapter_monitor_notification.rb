@@ -36,7 +36,7 @@ class AdapterNotification
 
       send_method = (mail_config.delete(:delivery_method) || :smtp).to_sym
       Mail.defaults do
-        delivery_method send_method, mail_config
+        delivery_method send_method, mail_config.symbolize_keys
       end
 
       logger = Logger.new(LOG_FILE, 'weekly')
@@ -47,6 +47,8 @@ class AdapterNotification
       message['subject'] ||= "Clearinghouse Adapter notification"
       message['body'] ||= "The Clearinghouse Adapter has generated the following notification:"
       message['body'] << "\n#{@options[:error]}" if @options[:error]
+
+      logger.debug "Sending notification with settings: #{Mail.delivery_method.settings}"
 
       Mail.deliver do
         to message['to']
