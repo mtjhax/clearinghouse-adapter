@@ -33,6 +33,7 @@ describe AdapterSync do
     }
     @adapter = AdapterSync.new(@adapter_options)
     DatabaseCleaner.clean_with(:truncation)
+    AdapterNotification.any_instance.stubs(:send)
   end
 
   after do
@@ -61,7 +62,9 @@ describe AdapterSync do
     end
 
     it "reports replication errors" do
-      @adapter.stubs(:get_updated_clearinghouse_trips).returns([ {'this' => 'hash', 'lacks' => 'an id key'} ])
+      trip_mock = Minitest::Mock
+      trip_mock.stubs(:data).returns({'this' => 'hash', 'lacks' => 'an id key'})
+      @adapter.stubs(:get_updated_clearinghouse_trips).returns([ trip_mock ])
       AdapterNotification.any_instance.expects(:send).once
       @adapter.poll
     end
@@ -79,15 +82,44 @@ describe AdapterSync do
   end
 
   describe AdapterSync, "#replicate_clearinghouse" do
-    it "requests trips updated since most recent tracked updated_at time"
-    it "requests all trips if there are no locally tracked trips"
-    it "stores new and modified trips in the trip_updates instance variable"
-    it "stores new and modified trip claims in the claim_updates instance variable"
-    it "stores new and modified trip comments in the comment_updates instance variable"
-    it "stores new and modified trip results in the result_updates instance variable"
+    before do
+      VCR.insert_cassette "AdapterSync#replicate_clearinghouse test"
+    end
+
+    after do
+      VCR.eject_cassette
+    end
+
+    it "requests trips updated since most recent tracked updated_at time" do
+      @last_update_time = 5.days.from_now
+      @trip_ticket = TripTicket.create(ch_updated_at: @last_update_time)
+      ApiClient.any_instance.expects(:get).once.with('trip_tickets/sync', updated_since: @last_update_time.strftime('%Y-%m-%d %H:%M:%S.%6N'))
+      @adapter.replicate_clearinghouse
+    end
+
+    it "requests all trips if there are no locally tracked trips" do
+      ApiClient.any_instance.expects(:get).once.with('trip_tickets/sync', updated_since: nil)
+      @adapter.replicate_clearinghouse
+    end
+
+    it "stores new and modified trips, claims, comments, and results in instance variables" do
+      @adapter.replicate_clearinghouse
+      @adapter.trip_updates.length.must_equal 7
+      @adapter.claim_updates.length.must_equal 3
+      @adapter.comment_updates.length.must_equal 7
+      @adapter.result_updates.length.must_equal 1
+    end
   end
 
   describe AdapterSync, "#export_changes" do
+    before do
+      VCR.insert_cassette "AdapterSync#replicate_clearinghouse test"
+    end
+
+    after do
+      VCR.eject_cassette
+    end
+
     it "raises a runtime error if export directory is not configured" do
       @adapter.options[:export][:export_folder] = nil
       Proc.new { @adapter.export_changes }.must_raise(RuntimeError)
@@ -98,13 +130,15 @@ describe AdapterSync do
       Proc.new { @adapter.export_changes }.must_raise(RuntimeError)
     end
 
-    it "outputs new and modified trip tickets to a CSV file"
-    it "outputs new and modified trip claims to a CSV file"
-    it "outputs new and modified trip comments to a CSV file"
-    it "outputs new and modified trip results to a CSV file"
-  end
-
-  describe AdapterSync, "#report_sync_errors" do
+    it "outputs new and modified trip tickets, claims, comments, and results to separate CSV files" do
+      @adapter.replicate_clearinghouse
+      @adapter.stubs(:timestamp_string).returns('timestamp')
+      @adapter.export_changes
+      File.exist?(File.join(@export_folder, "trip_tickets.timestamp.csv")).must_equal true
+      File.exist?(File.join(@export_folder, "trip_claims.timestamp.csv")).must_equal true
+      File.exist?(File.join(@export_folder, "trip_ticket_comments.timestamp.csv")).must_equal true
+      File.exist?(File.join(@export_folder, "trip_results.timestamp.csv")).must_equal true
+    end
   end
 
   describe AdapterSync, "#import_tickets" do
@@ -118,10 +152,23 @@ describe AdapterSync do
         customer_primary_phone: '222-333-4444',
         customer_seats_required: 1,
         requested_pickup_time: '09:00',
-        appointment_time: '10:00',
+        appointment_time: '3 August 2013, 10:00:00 UTC',
         requested_drop_off_time: '13:00',
         customer_information_withheld: false,
         scheduling_priority: 'pickup'
+      }
+      @customer_address_attributes = {
+        customer_address_address_1: '5 Maple Brook Ln',
+        customer_address_city: 'Arlington'
+      }
+      @posted_customer_address_attributes = {
+        address_1: '5 Maple Brook Ln',
+        city: 'Arlington'
+      }
+      @updated_trip_attributes = {
+        origin_trip_id: 111,
+        appointment_time: '3 August 2013, 10:00:00 UTC',
+        customer_last_name: 'Nohara',
       }
     end
 
@@ -136,14 +183,14 @@ describe AdapterSync do
     end
 
     it "adds files that were imported previously to the skip_files argument" do
-      file = create_csv(@input_folder, 'test.csv', ['test','headers'], [['test','values']])
-      create(:imported_file, file_name: file, modified: File.mtime(file), size: File.size(file), rows: 1)
+      file = create_csv(@input_folder, 'test1.csv', ['test','headers'], [['test','values']])
+      FactoryGirl.create(:imported_file, file_name: file, modified: File.mtime(file), size: File.size(file), rows: 1)
       Import.any_instance.expects(:from_folder).with(@input_folder, @output_folder, [file]).once.returns([])
       @adapter.import_tickets
     end
 
     it "tracks imported files to prevent reimport" do
-      file = create_csv(@input_folder, 'test1.csv', @minimum_trip_attributes.keys, [@minimum_trip_attributes.values])
+      file = create_csv(@input_folder, 'test2.csv', @minimum_trip_attributes.keys, [@minimum_trip_attributes.values])
       file_size = File.size(file)
       file_time = File.mtime(file)
       stub_result = ApiClient.new.tap {|result| result[:id] = 1379 }
@@ -158,7 +205,7 @@ describe AdapterSync do
     end
 
     it "tracks imported rows to prevent reimport" do
-      file = create_csv(@input_folder, 'test1.csv', @minimum_trip_attributes.keys, [@minimum_trip_attributes.values])
+      create_csv(@input_folder, 'test3.csv', @minimum_trip_attributes.keys, [@minimum_trip_attributes.values])
       stub_result = ApiClient.new.tap {|result| result[:id] = 1379 }
       ApiClient.any_instance.expects(:post).once.returns(stub_result)
       @adapter.import_tickets
@@ -170,7 +217,7 @@ describe AdapterSync do
 
     it "marks rows as errors if they do not contain an origin_trip_id" do
       attrs = @minimum_trip_attributes.tap {|h| h.delete(:origin_trip_id) }
-      file = create_csv(@input_folder, 'test1.csv', attrs.keys, [attrs.values])
+      file = create_csv(@input_folder, 'test4.csv', attrs.keys, [attrs.values])
       @adapter.import_tickets
       ImportedFile.count.must_equal 1
       imported_file = ImportedFile.first
@@ -180,7 +227,7 @@ describe AdapterSync do
     end
 
     it "marks rows as errors if they cannot be sent to the Clearinghouse API" do
-      file = create_csv(@input_folder, 'test1.csv', @minimum_trip_attributes.keys, [@minimum_trip_attributes.values])
+      create_csv(@input_folder, 'test5.csv', @minimum_trip_attributes.keys, [@minimum_trip_attributes.values])
       ApiClient.any_instance.stubs(:post).raises(RuntimeError, "This row blew up the API")
       @adapter.import_tickets
       ImportedFile.count.must_equal 1
@@ -189,20 +236,64 @@ describe AdapterSync do
       imported_file.row_errors.must_equal 1
     end
 
-    it "supports import of nested location objects"
-    it "supports import of nested trip_result object"
-    it "uses origin_trip_id and appointment_time to find trips that are already being tracked"
-
     it "sends new trips to the Clearinghouse API with POST" do
-      file = create_csv(@input_folder, 'test1.csv', @minimum_trip_attributes.keys, [@minimum_trip_attributes.values])
+      create_csv(@input_folder, 'test6.csv', @minimum_trip_attributes.keys, [@minimum_trip_attributes.values])
       stub_result = ApiClient.new.tap {|result| result[:id] = 1379 }
       ApiClient.any_instance.expects(:post).once.returns(stub_result)
       @adapter.import_tickets
     end
 
-    it "creates new trips in the local database"
-    it "updates existing trips on the Clearinghouse with PUT"
-    it "updates tracked trips in the local database with changes"
-    it "sends notifications for files that contained errors"
+    it "supports import of nested objects" do
+      attrs = @minimum_trip_attributes.merge(@customer_address_attributes)
+      customer_address_attrs = { 'customer_address_attributes' => @posted_customer_address_attributes.stringify_keys }
+      create_csv(@input_folder, 'test7.csv', attrs.keys, [attrs.values])
+      stub_result = ApiClient.new.tap {|result| result[:id] = 1379 }
+      ApiClient.any_instance.expects(:post).with(:trip_tickets, has_entry(customer_address_attrs)).once.returns(stub_result)
+      @adapter.import_tickets
+    end
+
+    it "uses origin_trip_id and appointment_time to find trips that are already being tracked" do
+      create_csv(@input_folder, 'test8.csv', @minimum_trip_attributes.keys, [@minimum_trip_attributes.values])
+      stub_result = ApiClient.new.tap {|result| result[:id] = 1379 }
+      ApiClient.any_instance.stubs(:post).returns(stub_result)
+      TripTicket.expects(:find_or_create_by_origin_trip_id_and_appointment_time).with(@minimum_trip_attributes[:origin_trip_id].to_s, @minimum_trip_attributes[:appointment_time]).returns(TripTicket.new)
+      @adapter.import_tickets
+    end
+
+    it "creates new trips in the local database" do
+      VCR.use_cassette('AdapterSync#import_tickets trip create test') do
+        create_csv(@input_folder, 'test9.csv', @minimum_trip_attributes.keys, [@minimum_trip_attributes.values])
+        @adapter.import_tickets
+        TripTicket.first.ch_data_hash[:customer_last_name].must_equal 'Smith'
+      end
+    end
+
+    it "updates existing trips on the Clearinghouse with PUT" do
+      create_csv(@input_folder, 'test10.csv', @minimum_trip_attributes.keys, [@minimum_trip_attributes.values])
+      create(:trip_ticket, ch_id: 1379, origin_trip_id: @minimum_trip_attributes[:origin_trip_id], appointment_time: @minimum_trip_attributes[:appointment_time])
+      stub_result = ApiClient.new.tap {|result| result[:id] = 1379 }
+      ApiClient.any_instance.expects(:put).once.returns(stub_result)
+      @adapter.import_tickets
+    end
+
+    it "updates tracked trips in the local database with changes" do
+      VCR.use_cassette('AdapterSync#import_tickets trip update test') do
+        create_csv(@input_folder, 'test11.csv', @minimum_trip_attributes.keys, [@minimum_trip_attributes.values])
+        @adapter.import_tickets
+        trip = TripTicket.first
+        trip.ch_data_hash[:customer_last_name].must_equal 'Smith'
+
+        create_csv(@input_folder, 'test12.csv', @updated_trip_attributes.keys, [@updated_trip_attributes.values])
+        @adapter.import_tickets
+        trip.reload
+        trip.ch_data_hash[:customer_last_name].must_equal 'Nohara'
+      end
+    end
+
+    it "sends notifications for files that contained errors" do
+      create_illegal_csv(@input_folder, 'test13.csv')
+      AdapterNotification.any_instance.expects(:send).once
+      @adapter.import_tickets
+    end
   end
 end

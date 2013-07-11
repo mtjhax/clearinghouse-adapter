@@ -17,6 +17,7 @@ class ActiveRecordConnection
 
   def initialize(logger, options = {})
     @options = options || {}
+    ActiveRecord::Base.default_timezone = :utc
     ActiveRecord::Base.logger = logger
     ActiveRecord::Base.establish_connection @options
 

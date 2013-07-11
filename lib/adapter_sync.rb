@@ -116,7 +116,7 @@ class AdapterSync
     flattened_results.each { |x| result_keys |= x.stringify_keys.keys }
 
     # create file names for exports
-    timestamp = Time.zone.now.strftime("%Y-%m-%d.%H%M%S")
+    timestamp = timestamp_string
     trip_file = File.join(export_dir, "trip_tickets.#{timestamp}.csv")
     claim_file = File.join(export_dir, "trip_claims.#{timestamp}.csv")
     comment_file = File.join(export_dir, "trip_ticket_comments.#{timestamp}.csv")
@@ -159,12 +159,13 @@ class AdapterSync
       else
         # support nested values for :customer_address, :pick_up_location, :drop_off_location, :trip_result
         # these can be included in the CSV file with the object name prepended, e.g. 'trip_result_outcome'
-        # they are removed from the row, then added back as nested objects, e.g.: row[:trip_result_attributes] = { ... })
+        # upon import they are removed from the row, then added back as nested objects,
+        # e.g.: row['trip_result_attributes'] = { 'outcome' => ... })
 
-        customer_address_hash = row.select {|k, v| row.delete(k) || true if k.to_s.start_with?('customer_address_') }
-        pick_up_location_hash = row.select {|k, v| row.delete(k) || true if k.to_s.start_with?('pick_up_location_') }
-        drop_off_location_hash = row.select {|k, v| row.delete(k) || true if k.to_s.start_with?('drop_off_location_') }
-        trip_result_hash = row.select {|k, v| row.delete(k) || true if k.to_s.start_with?('trip_result_') }
+        customer_address_hash = nested_object_to_hash(row, 'customer_address_')
+        pick_up_location_hash = nested_object_to_hash(row, 'pick_up_location_')
+        drop_off_location_hash = nested_object_to_hash(row, 'drop_off_location_')
+        trip_result_hash = nested_object_to_hash(row, 'trip_result_')
 
         row['customer_address_attributes'] = customer_address_hash if customer_address_hash.present?
         row['pick_up_location_attributes'] = pick_up_location_hash if pick_up_location_hash.present?
@@ -174,7 +175,8 @@ class AdapterSync
         # trips on the provider are uniquely identified by trip ID and appointment time because some trip tickets are
         # recycled, but these should represent new trips on the Clearinghouse and are stored as new trips in the
         # Adapter so the corresponding Clearinghouse IDs can each be stored
-        trip = TripTicket.find_or_create_by_origin_trip_id_and_appointment_time(row[:origin_trip_id], row[:appointment_time])
+
+        trip = TripTicket.find_or_create_by_origin_trip_id_and_appointment_time(row[:origin_trip_id], Time.zone.parse(row[:appointment_time]))
 
         unless trip.synced?
           api_result = post_new_trip(row)
@@ -182,7 +184,7 @@ class AdapterSync
         else
           # trip is already tracked, see if we need to update the CH
           # Note: for now we just try an update and see what happens, we need to deal with error if no fields changed
-          api_result = put_trip_changes(row)
+          api_result = put_trip_changes(trip.ch_id, row)
           log.info "PUT trip ticket with API, result #{api_result}"
         end
 
@@ -200,7 +202,7 @@ class AdapterSync
       # send notifications for files that contained errors
       # TODO combine import error reporting code with sync error code (see report_sync_errors method)
       if r[:error] || r[:row_errors].to_i > 0
-        msg = "Encountered #{r[:row_errors]} errors while importing file #{r[:file_name]} at #{r[:created_at]}:\\n#{r[:error_msg]}"
+        msg = "Encountered #{r[:row_errors]} errors while importing file #{r[:file_name]} at #{r[:created_at]}:\n#{r[:error_msg]}"
         begin
           AdapterNotification.new(error: msg).send
         rescue Exception => e
@@ -211,6 +213,10 @@ class AdapterSync
   end
 
   protected
+
+  def timestamp_string
+    Time.zone.now.strftime("%Y-%m-%d.%H%M%S")
+  end
 
   def export_csv(filename, headers, data)
     if data.present?
@@ -241,7 +247,7 @@ class AdapterSync
   end
 
   def most_recent_tracked_update_time
-    TripTicket.maximum('ch_updated_at')
+    TripTicket.maximum('ch_updated_at').try(:utc)
   end
 
   # Query CH for all trips/results/claims updated after that time where our provider is originator or a claimant
@@ -250,7 +256,7 @@ class AdapterSync
   def get_updated_clearinghouse_trips(since_time)
     time_str = since_time.presence && (since_time.is_a?(String) ? since_time : since_time.strftime('%Y-%m-%d %H:%M:%S.%6N'))
     begin
-      @clearinghouse.get('trip_tickets/sync', updated_since: time_str)
+      @clearinghouse.get('trip_tickets/sync', updated_since: time_str) || []
     rescue Exception => e
       api_error "API error on GET: #{e}"
     end
@@ -259,14 +265,26 @@ class AdapterSync
   def process_updated_clearinghouse_trip(trip_hash)
     # TODO this is clunky, maybe raise exceptions and rescue them below
     if trip_hash[:id].nil?
-      errors << { api_id_missing: "A trip ticket from the Clearinghouse was missing its ID" }
+      errors << "A trip ticket from the Clearinghouse was missing its ID"
       return
     end
 
     adapter_trip = TripTicket.find_by_ch_id(trip_hash[:id])
 
     if adapter_trip.nil?
-      trip_updates << { update_type: 'new_record' }.merge(trip_hash)
+      # pluck the modifications to claims, comments, and results out of the trip to report them separately
+      trip = trip_hash.dup
+      claims = trip.delete(:trip_claims)
+      comments = trip.delete(:trip_ticket_comments)
+      result = trip.delete(:trip_result)
+
+      # save results for export
+      trip_updates << { update_type: 'new_record' }.merge(trip) unless trip.blank?
+      result_updates << { update_type: 'new_record' }.merge(result) if result.present?
+      claims.each { |c| claim_updates << { update_type: 'new_record' }.merge(c) if c.present? }
+      comments.each { |c| comment_updates << { update_type: 'new_record' }.merge(c) if c.present? }
+
+      # save new trip in local database
       TripTicket.new.map_attributes(trip_hash).save!
     else
       trip_diff = hash_diff(adapter_trip.ch_data_hash, trip_hash).with_indifferent_access
@@ -286,8 +304,20 @@ class AdapterSync
       comments.each { |comment_diff| record_changes(comment_diff, comment_updates) }
       record_changes(result, result_updates) if result.present?
 
+      # save updated trip in local database
       adapter_trip.map_attributes(trip_hash).save!
     end
+  end
+
+  def nested_object_to_hash(row, prefix)
+    new_hash = {}
+    row.select do |k, v|
+      if k.to_s.start_with?(prefix)
+        new_key = k.to_s.gsub(Regexp.new("^#{prefix}"), '')
+        new_hash[new_key] = row.delete(k)
+      end
+    end
+    new_hash
   end
 
   def record_changes(diff_hash, save_list)
@@ -305,9 +335,9 @@ class AdapterSync
     end
   end
 
-  def put_trip_changes(trip_hash)
+  def put_trip_changes(trip_id, trip_hash)
     begin
-      @clearinghouse.put(:trip_tickets, trip_hash)
+      @clearinghouse.put([ :trip_tickets, trip_id ], trip_hash)
     rescue Exception => e
       # TODO if exception indicates an error due to no changes, we should just ignore that error
       api_error "API error on PUT: #{e}"
@@ -329,7 +359,7 @@ class AdapterSync
 
   def report_sync_errors
     unless errors.blank?
-      msg = "Encountered #{errors.length} errors while syncing with the Ride Clearinghouse:\\n" << errors.join("\\n")
+      msg = "Encountered #{errors.length} errors while syncing with the Ride Clearinghouse:\n" << errors.join("\n")
       begin
         AdapterNotification.new(error: msg).send
       rescue Exception => e

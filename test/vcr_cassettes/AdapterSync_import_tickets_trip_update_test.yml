@@ -1,0 +1,97 @@
+---
+http_interactions:
+- request:
+    method: post
+    uri: http://localhost:3000/api/v1/trip_tickets
+    body:
+      encoding: US-ASCII
+      string: api_key=3d0fdf48c058b1f43bb63da689d1f8bd&nonce=1373553162%3A1&timestamp=2013-07-11T10%3A32%3A42-04%3A00&hmac_digest=b847e80c3a61a8f12ea53bf7cc291f18a4455c58&trip_ticket%5Borigin_trip_id%5D=111&trip_ticket%5Borigin_customer_id%5D=222&trip_ticket%5Bcustomer_first_name%5D=Bob&trip_ticket%5Bcustomer_last_name%5D=Smith&trip_ticket%5Bcustomer_dob%5D=1%2F2%2F1955&trip_ticket%5Bcustomer_primary_phone%5D=222-333-4444&trip_ticket%5Bcustomer_seats_required%5D=1&trip_ticket%5Brequested_pickup_time%5D=09%3A00&trip_ticket%5Bappointment_time%5D=3%20August%202013%2C%2010%3A00%3A00%20UTC&trip_ticket%5Brequested_drop_off_time%5D=13%3A00&trip_ticket%5Bcustomer_information_withheld%5D=false&trip_ticket%5Bscheduling_priority%5D=pickup
+    headers:
+      Accept:
+      - ! '*/*; q=0.5, application/xml'
+      Accept-Encoding:
+      - gzip, deflate
+      Content-Length:
+      - '723'
+      Content-Type:
+      - application/x-www-form-urlencoded
+      User-Agent:
+      - Ruby
+  response:
+    status:
+      code: 201
+      message: Created
+    headers:
+      Content-Type:
+      - application/json
+      Content-Length:
+      - '1757'
+      X-Ua-Compatible:
+      - IE=Edge
+      Etag:
+      - ! '"9a8b0f014eccea3fb00cc5db7ef1f507"'
+      Cache-Control:
+      - max-age=0, private, must-revalidate
+      X-Request-Id:
+      - c664f80db3ec38d10a207b1a733ddfdc
+      X-Runtime:
+      - '2.518985'
+      Connection:
+      - keep-alive
+      Server:
+      - thin 1.5.0 codename Knife
+    body:
+      encoding: US-ASCII
+      string: ! '{"id":45,"rescinded":false,"origin_provider_id":1,"origin_customer_id":"222","origin_trip_id":111,"claimant_provider_id":null,"claimant_trip_id":null,"pick_up_location_id":null,"drop_off_location_id":null,"customer_address_id":null,"customer_first_name":"Bob","customer_last_name":"Smith","customer_middle_name":null,"customer_dob":"1955-02-01","customer_primary_phone":"222-333-4444","customer_emergency_phone":null,"customer_primary_language":null,"customer_ethnicity":null,"customer_race":null,"customer_information_withheld":false,"customer_identifiers":{},"customer_notes":null,"customer_boarding_time":0,"customer_deboarding_time":0,"customer_seats_required":1,"customer_impairment_description":null,"customer_mobility_impairments":null,"customer_assistive_devices":null,"customer_service_animals":null,"customer_eligibility_factors":null,"num_attendants":0,"num_guests":0,"guest_or_attendant_service_animals":null,"guest_or_attendant_assistive_devices":null,"requested_pickup_time":"2000-01-01T09:00:00Z","earliest_pick_up_time":null,"appointment_time":"2013-08-03T10:00:00Z","requested_drop_off_time":"2000-01-01T13:00:00Z","allowed_time_variance":-1,"trip_purpose_description":null,"trip_funders":null,"trip_notes":null,"scheduling_priority":"pickup","created_at":"2013-07-11
+        14:32:44.408595","updated_at":"2013-07-11 14:32:44.408595","originator":{"id":1,"name":"Google","primary_contact_email":null,"address":{"id":1,"address_1":"123
+        Main St","address_2":null,"city":"Portland","position":null,"state":"OR","zip":"97210","created_at":"2013-03-09T00:33:34Z","updated_at":"2013-03-09T00:33:34Z"}},"claimant":null,"customer_address":null,"pick_up_location":null,"drop_off_location":null,"trip_result":null,"trip_claims":[],"trip_ticket_comments":[]}'
+    http_version: 
+  recorded_at: Thu, 11 Jul 2013 14:32:44 GMT
+- request:
+    method: put
+    uri: http://localhost:3000/api/v1/trip_tickets/45
+    body:
+      encoding: US-ASCII
+      string: api_key=3d0fdf48c058b1f43bb63da689d1f8bd&nonce=1373553164%3A2&timestamp=2013-07-11T10%3A32%3A44-04%3A00&hmac_digest=1e14bec5a3d6e20d335fb39ebc25ff9b84268c1d&trip_ticket%5Borigin_trip_id%5D=111&trip_ticket%5Bappointment_time%5D=3%20August%202013%2C%2010%3A00%3A00%20UTC&trip_ticket%5Bcustomer_last_name%5D=Nohara
+    headers:
+      Accept:
+      - ! '*/*; q=0.5, application/xml'
+      Accept-Encoding:
+      - gzip, deflate
+      Content-Length:
+      - '311'
+      Content-Type:
+      - application/x-www-form-urlencoded
+      User-Agent:
+      - Ruby
+  response:
+    status:
+      code: 200
+      message: OK
+    headers:
+      Content-Type:
+      - application/json
+      Content-Length:
+      - '1758'
+      X-Ua-Compatible:
+      - IE=Edge
+      Etag:
+      - ! '"b4c4cbe9004947a44dd3d6aaa79501d0"'
+      Cache-Control:
+      - max-age=0, private, must-revalidate
+      X-Request-Id:
+      - 850cd6f0305f53f642c6b9175d8492ee
+      X-Runtime:
+      - '0.070160'
+      Connection:
+      - keep-alive
+      Server:
+      - thin 1.5.0 codename Knife
+    body:
+      encoding: US-ASCII
+      string: ! '{"id":45,"rescinded":false,"origin_provider_id":1,"origin_customer_id":"222","origin_trip_id":111,"claimant_provider_id":null,"claimant_trip_id":null,"pick_up_location_id":null,"drop_off_location_id":null,"customer_address_id":null,"customer_first_name":"Bob","customer_last_name":"Nohara","customer_middle_name":null,"customer_dob":"1955-02-01","customer_primary_phone":"222-333-4444","customer_emergency_phone":null,"customer_primary_language":null,"customer_ethnicity":null,"customer_race":null,"customer_information_withheld":false,"customer_identifiers":{},"customer_notes":null,"customer_boarding_time":0,"customer_deboarding_time":0,"customer_seats_required":1,"customer_impairment_description":null,"customer_mobility_impairments":null,"customer_assistive_devices":null,"customer_service_animals":null,"customer_eligibility_factors":null,"num_attendants":0,"num_guests":0,"guest_or_attendant_service_animals":null,"guest_or_attendant_assistive_devices":null,"requested_pickup_time":"2000-01-01T09:00:00Z","earliest_pick_up_time":null,"appointment_time":"2013-08-03T10:00:00Z","requested_drop_off_time":"2000-01-01T13:00:00Z","allowed_time_variance":-1,"trip_purpose_description":null,"trip_funders":null,"trip_notes":null,"scheduling_priority":"pickup","created_at":"2013-07-11
+        14:32:44.408595","updated_at":"2013-07-11 14:32:44.774453","originator":{"id":1,"name":"Google","primary_contact_email":null,"address":{"id":1,"address_1":"123
+        Main St","address_2":null,"city":"Portland","position":null,"state":"OR","zip":"97210","created_at":"2013-03-09T00:33:34Z","updated_at":"2013-03-09T00:33:34Z"}},"claimant":null,"customer_address":null,"pick_up_location":null,"drop_off_location":null,"trip_result":null,"trip_claims":[],"trip_ticket_comments":[]}'
+    http_version: 
+  recorded_at: Thu, 11 Jul 2013 14:32:44 GMT
+recorded_with: VCR 2.5.0

@@ -26,4 +26,12 @@ FactoryGirl.define do
     end
   end
 
+  factory :trip_ticket do
+    ch_id 1
+    ch_updated_at '1 July 2013 12:00:00 UTC'
+    is_originated true
+    origin_trip_id 111
+    appointment_time '1 August 2013 12:00:00 UTC'
+  end
+
 end
