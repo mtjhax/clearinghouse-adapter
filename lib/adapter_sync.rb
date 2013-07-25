@@ -167,6 +167,10 @@ class AdapterSync
         drop_off_location_hash = nested_object_to_hash(row, 'drop_off_location_')
         trip_result_hash = nested_object_to_hash(row, 'trip_result_')
 
+        normalize_location_coordinates(customer_address_hash)
+        normalize_location_coordinates(pick_up_location_hash)
+        normalize_location_coordinates(drop_off_location_hash)
+
         row['customer_address_attributes'] = customer_address_hash if customer_address_hash.present?
         row['pick_up_location_attributes'] = pick_up_location_hash if pick_up_location_hash.present?
         row['drop_off_location_attributes'] = drop_off_location_hash if drop_off_location_hash.present?
@@ -318,6 +322,25 @@ class AdapterSync
       end
     end
     new_hash
+  end
+
+  # normalize accepted location coordinate formats to WKT
+  # accepted:
+  # location_hash['lat'] and location_hash['lon']
+  # location_hash['position'] = "lon lat" (punction ignored except dash, e.g. lon:lat, lon,lat, etc.)
+  # location_hash['position'] = "POINT(lon lat)"
+  def normalize_location_coordinates(location_hash)
+    lat = location_hash.delete('lat')
+    lon = location_hash.delete('lon')
+    position = location_hash.delete('position')
+    new_position = position
+    if lon.present? && lat.present?
+      new_position = "POINT(#{lon} #{lat})"
+    else
+      match = position.match(/^\s*([\d\.\-]+)[^\d-]+([\d\.\-]+)\s*$/)
+      new_position = "POINT(#{match[1]} #{match[2]})" if match
+    end
+    location_hash['position'] = new_position
   end
 
   def record_changes(diff_hash, save_list)
