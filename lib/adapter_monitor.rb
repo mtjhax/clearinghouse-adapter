@@ -72,7 +72,6 @@ class Daemon
   end
 
   def service_stop
-    # TODO when service stopped, if we have a child process running, register disinterest so exit is not delayed(?)
     exit
   end
 

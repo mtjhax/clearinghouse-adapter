@@ -23,9 +23,6 @@ TARGET = File.expand_path("adapter_monitor.rb", File.dirname(__FILE__))
 if ARGV[0] == "install"
   puts "Installing service..."
 
-  # TODO make sure Ruby and target exist
-  # TODO provide ability to update the service
-
   Service.create(
     :service_name => 'ride_clearinghouse_adapter',
     :host => nil,

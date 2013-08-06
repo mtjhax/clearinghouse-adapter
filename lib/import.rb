@@ -52,9 +52,6 @@ require 'active_support/core_ext/hash/indifferent_access'
 #
 # If a file contains errors, from_folder will rename the file '*.error' to prevent repeated
 # attempts to reimport.
-#
-# TODO would be good if you could pass in a hash validations (fields required, format regexps, etc.)
-# TODO can it log which specific lines of a CSV file have invalid data to help in diagnosing problems?
 
 class Import
   class RowError < RuntimeError; end

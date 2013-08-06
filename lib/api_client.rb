@@ -106,7 +106,6 @@ class ApiClient
       params = signed_params({ resource_name => additional_params })
     end
     result = @site[versioned(resource)].send(method, params)
-    # TODO consider rescuing RestClient exceptions and JSON-parsing e.response
     process_result(resource, result)
   end
 

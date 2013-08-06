@@ -1,4 +1,4 @@
-# TODO document all available Mail gem delivery options in comments
+# Example:
 #
 # connection:
 #   delivery_method: smtp

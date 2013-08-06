@@ -25,7 +25,7 @@ require 'active_support/core_ext/object'
 require 'active_support/core_ext/hash'
 require 'active_support/time_with_zone'
 
-require 'csv' # TODO for exporting results, but should extend the Import class to do exports instead
+require 'csv'
 
 require 'api_client'
 require 'active_record_connection'
@@ -94,7 +94,6 @@ class AdapterSync
     updated_trips.each {|trip| process_updated_clearinghouse_trip(trip.data) }
   end
 
-  # TODO refactor to a separate Export class
   def export_changes
     return unless options[:export][:enabled]
     export_dir = options[:export][:export_folder]
@@ -128,7 +127,6 @@ class AdapterSync
     export_csv(result_file, result_keys, flattened_results)
   end
 
-  # TODO this needs refactoring as its too long and complex
   def import_tickets
     return unless options[:import][:enabled]
     import_dir = options[:import][:import_folder]
@@ -204,7 +202,6 @@ class AdapterSync
       # as an extra layer of safety, record files that were imported so we can avoid reimporting them
       ImportedFile.create(r)
       # send notifications for files that contained errors
-      # TODO combine import error reporting code with sync error code (see report_sync_errors method)
       if r[:error] || r[:row_errors].to_i > 0
         msg = "Encountered #{r[:row_errors]} errors while importing file #{r[:file_name]} at #{r[:created_at]}:\n#{r[:error_msg]}"
         begin
@@ -232,7 +229,6 @@ class AdapterSync
 
   # flatten hash structure, changing keys of nested objects to parentkey_nestedkey
   # arrays of sub-objects will be ignored
-  # TODO refactor to a separate Export class
   def flatten_hash(hash, prepend_name = nil)
     new_hash = {}
     hash.each do |key, value|
@@ -255,7 +251,6 @@ class AdapterSync
   end
 
   # Query CH for all trips/results/claims updated after that time where our provider is originator or a claimant
-  # TODO if since_time nil, maybe omit resolved trips from API query since they should not change again
 
   def get_updated_clearinghouse_trips(since_time)
     time_str = since_time.presence && (since_time.is_a?(String) ? since_time : since_time.strftime('%Y-%m-%d %H:%M:%S.%6N'))
@@ -267,7 +262,6 @@ class AdapterSync
   end
 
   def process_updated_clearinghouse_trip(trip_hash)
-    # TODO this is clunky, maybe raise exceptions and rescue them below
     if trip_hash[:id].nil?
       errors << "A trip ticket from the Clearinghouse was missing its ID"
       return
@@ -344,7 +338,6 @@ class AdapterSync
   end
 
   def record_changes(diff_hash, save_list)
-    # TODO blow up if diff is not a hash or does not have ID key
     update_type = (diff_hash.has_key?(:_new) || diff_hash.has_key?('_new')) ? 'new_record' : 'modified'
     save_list << { update_type: update_type }.merge(clean_diff(diff_hash))
   end
@@ -353,7 +346,6 @@ class AdapterSync
     begin
       @clearinghouse.post(:trip_tickets, trip_hash)
     rescue Exception => e
-      # TODO if exception indicates a duplicate object, we probably want to get the trip from the CH then try an update
       api_error "API error on POST: #{e}"
     end
   end
@@ -362,7 +354,6 @@ class AdapterSync
     begin
       @clearinghouse.put([ :trip_tickets, trip_id ], trip_hash)
     rescue Exception => e
-      # TODO if exception indicates an error due to no changes, we should just ignore that error
       api_error "API error on PUT: #{e}"
     end
   end
