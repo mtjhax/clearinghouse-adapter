@@ -1,4 +1,4 @@
-# Ride Clearinghouse Adapter
+# Ride Connection Clearinghouse Adapter
 
 # Introduction
 
