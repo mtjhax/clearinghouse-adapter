@@ -330,11 +330,11 @@ class AdapterSync
     new_position = position
     if lon.present? && lat.present?
       new_position = "POINT(#{lon} #{lat})"
-    else
+    elsif position.present?
       match = position.match(/^\s*([\d\.\-]+)[^\d-]+([\d\.\-]+)\s*$/)
       new_position = "POINT(#{match[1]} #{match[2]})" if match
     end
-    location_hash['position'] = new_position
+    location_hash['position'] = new_position if new_position
   end
 
   def record_changes(diff_hash, save_list)
