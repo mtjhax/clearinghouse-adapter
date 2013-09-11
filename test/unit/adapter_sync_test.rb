@@ -295,5 +295,13 @@ describe AdapterSync do
       AdapterNotification.any_instance.expects(:send).once
       @adapter.import_tickets
     end
+
+    it "should support dates formatted as mm/dd/yyyy instead of dd/mm/yyyy" do
+      VCR.use_cassette('AdapterSync#import_tickets trip create test') do
+        create_csv(@input_folder, 'test14.csv', @minimum_trip_attributes.keys, [@minimum_trip_attributes.values])
+        @adapter.import_tickets
+        TripTicket.first.ch_data_hash[:customer_dob].must_equal "1955-01-02"
+      end
+    end
   end
 end

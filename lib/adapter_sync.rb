@@ -155,24 +155,8 @@ class AdapterSync
       if row[:origin_trip_id].nil?
         raise Import::RowError, "Imported row does not contain an origin_trip_id value"
       else
-        # support nested values for :customer_address, :pick_up_location, :drop_off_location, :trip_result
-        # these can be included in the CSV file with the object name prepended, e.g. 'trip_result_outcome'
-        # upon import they are removed from the row, then added back as nested objects,
-        # e.g.: row['trip_result_attributes'] = { 'outcome' => ... })
-
-        customer_address_hash = nested_object_to_hash(row, 'customer_address_')
-        pick_up_location_hash = nested_object_to_hash(row, 'pick_up_location_')
-        drop_off_location_hash = nested_object_to_hash(row, 'drop_off_location_')
-        trip_result_hash = nested_object_to_hash(row, 'trip_result_')
-
-        normalize_location_coordinates(customer_address_hash)
-        normalize_location_coordinates(pick_up_location_hash)
-        normalize_location_coordinates(drop_off_location_hash)
-
-        row['customer_address_attributes'] = customer_address_hash if customer_address_hash.present?
-        row['pick_up_location_attributes'] = pick_up_location_hash if pick_up_location_hash.present?
-        row['drop_off_location_attributes'] = drop_off_location_hash if drop_off_location_hash.present?
-        row['trip_result_attributes'] = trip_result_hash if trip_result_hash.present?
+        handle_nested_objects(row)
+        handle_date_conversions(row)
 
         # trips on the provider are uniquely identified by trip ID and appointment time because some trip tickets are
         # recycled, but these should represent new trips on the Clearinghouse and are stored as new trips in the
@@ -307,6 +291,27 @@ class AdapterSync
     end
   end
 
+  def handle_nested_objects(row)
+    # support nested values for :customer_address, :pick_up_location, :drop_off_location, :trip_result
+    # these can be included in the CSV file with the object name prepended, e.g. 'trip_result_outcome'
+    # upon import they are removed from the row, then added back as nested objects,
+    # e.g.: row['trip_result_attributes'] = { 'outcome' => ... })
+
+    customer_address_hash = nested_object_to_hash(row, 'customer_address_')
+    pick_up_location_hash = nested_object_to_hash(row, 'pick_up_location_')
+    drop_off_location_hash = nested_object_to_hash(row, 'drop_off_location_')
+    trip_result_hash = nested_object_to_hash(row, 'trip_result_')
+
+    normalize_location_coordinates(customer_address_hash)
+    normalize_location_coordinates(pick_up_location_hash)
+    normalize_location_coordinates(drop_off_location_hash)
+
+    row['customer_address_attributes'] = customer_address_hash if customer_address_hash.present?
+    row['pick_up_location_attributes'] = pick_up_location_hash if pick_up_location_hash.present?
+    row['drop_off_location_attributes'] = drop_off_location_hash if drop_off_location_hash.present?
+    row['trip_result_attributes'] = trip_result_hash if trip_result_hash.present?
+  end
+
   def nested_object_to_hash(row, prefix)
     new_hash = {}
     row.select do |k, v|
@@ -335,6 +340,22 @@ class AdapterSync
       new_position = "POINT(#{match[1]} #{match[2]})" if match
     end
     location_hash['position'] = new_position if new_position
+  end
+
+  def handle_date_conversions(row)
+    # assume any date entered as ##/##/#### is mm/dd/yyyy, convert to dd/mm/yyyy the way Ruby prefers
+    changed = false
+    row.each do |k,v|
+      parts = k.rpartition('_')
+      if parts[1] == '_' && ['date', 'time', 'at', 'on', 'dob'].include?(parts[2])
+        if v =~ /^(\d{1,2})\/(\d{1,2})\/(\d{4})(.*)$/
+          new_val = "#{ "%02d" % $2 }/#{ "%02d" % $1 }/#{ $3 }#{ $4 }"
+          row[k] = new_val
+          changed = true
+        end
+      end
+    end
+    changed
   end
 
   def record_changes(diff_hash, save_list)
