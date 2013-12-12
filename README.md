@@ -157,6 +157,7 @@ c:\adapter\bin\install_adapter_service
 -   If uninstalling the Adapter, before deleting any files use:
 
 ```
+cd c:\adapter
 c:\adapter\bin\remove_adapter_service
 ```
 
