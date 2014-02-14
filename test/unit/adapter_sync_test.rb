@@ -29,7 +29,8 @@ describe AdapterSync do
     FileUtils.mkpath @export_folder
     @adapter_options = {
         import: { enabled: true, import_folder: @input_folder, completed_folder: @output_folder },
-        export: { enabled: true, export_folder: @export_folder }
+        export: { enabled: true, export_folder: @export_folder },
+        processors: { pre_processor: '', post_processor: '' },
     }
     @adapter = AdapterSync.new(@adapter_options)
     DatabaseCleaner.clean_with(:truncation)

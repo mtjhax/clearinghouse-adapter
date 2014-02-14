@@ -6,3 +6,7 @@ import:
 export:
   enabled: true
   export_folder: tmp/export
+
+processors:
+  pre_processor: processors/pre_processor.rb
+  post_processor: processors/post_processor.rb

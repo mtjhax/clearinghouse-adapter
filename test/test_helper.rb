@@ -14,6 +14,7 @@
 
 ENV["ADAPTER_ENV"] = "test"
 
+require 'debugger'
 require 'minitest/autorun'
 require 'minitest/spec'
 require 'minitest/mock'

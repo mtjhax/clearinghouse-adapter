@@ -31,6 +31,7 @@ require 'api_client'
 require 'active_record_connection'
 require 'import'
 require 'adapter_monitor_notification'
+require 'processors'
 
 model_dir = File.join(File.dirname(__FILE__), 'model')
 $LOAD_PATH.unshift(model_dir)
@@ -56,7 +57,8 @@ class AdapterSync
   DB_CONFIG_FILE = File.expand_path(File.join('..', 'config', 'database.yml'), File.dirname(__FILE__))
   MIGRATIONS_DIR = File.expand_path(File.join('..', 'db', 'migrations'), File.dirname(__FILE__))
 
-  attr_accessor :options, :logger, :errors, :trip_updates, :claim_updates, :comment_updates, :result_updates
+  attr_accessor :options, :logger, :errors, :trip_updates, :claim_updates, :comment_updates, :result_updates,
+    :pre_processor, :post_processor
 
   def initialize(opts = {})
     @logger = Logger.new(LOG_FILE, 'weekly')
@@ -73,6 +75,12 @@ class AdapterSync
     apiconfig = load_config(API_CONFIG_FILE)[ENV["ADAPTER_ENV"]]
     apiconfig['raw'] = false
     @clearinghouse = ApiClient.new(apiconfig)
+    
+    # create pre- and postprocessor instances
+    require options[:processors][:pre_processor] unless options[:processors][:pre_processor].blank?
+    require options[:processors][:post_processor] unless options[:processors][:post_processor].blank?
+    @pre_processor = PreProcessor.new
+    @post_processor = PostProcessor.new
   end
 
   def poll
@@ -155,8 +163,9 @@ class AdapterSync
       if row[:origin_trip_id].nil?
         raise Import::RowError, "Imported row does not contain an origin_trip_id value"
       else
-        handle_nested_objects(row)
-        handle_date_conversions(row)
+        handle_nested_objects!(row)
+        handle_date_conversions!(row)
+        row = post_processor.process_trip_hash(row)
 
         # trips on the provider are uniquely identified by trip ID and appointment time because some trip tickets are
         # recycled, but these should represent new trips on the Clearinghouse and are stored as new trips in the
@@ -254,8 +263,10 @@ class AdapterSync
     adapter_trip = TripTicket.find_by_ch_id(trip_hash[:id])
 
     if adapter_trip.nil?
+      # duplicate the trip_hash for export (original hash will be saved in the database), and run it through any pre_processing
+      trip = pre_processor.process_trip_hash(trip_hash.dup)
+
       # pluck the modifications to claims, comments, and results out of the trip to report them separately
-      trip = trip_hash.dup
       claims = trip.delete(:trip_claims)
       comments = trip.delete(:trip_ticket_comments)
       result = trip.delete(:trip_result)
@@ -269,7 +280,12 @@ class AdapterSync
       # save new trip in local database
       TripTicket.new.map_attributes(trip_hash).save!
     else
+      # collect a hash of changed attributes since the last sync
       trip_diff = hash_diff(adapter_trip.ch_data_hash, trip_hash).with_indifferent_access
+      
+      # using the changed attributes hash, remove all :_modified keys added by the hash_diff method and
+      # run them through the pre_processor. Then merge any changes back into the hash_diff results
+      trip_diff.merge!(pre_processor.process_trip_hash(clean_trip_diff(trip_diff)))
 
       # pluck the modifications to claims, comments, and results out of the trip to report them separately
       claims = trip_diff.delete(:trip_claims)
@@ -291,7 +307,7 @@ class AdapterSync
     end
   end
 
-  def handle_nested_objects(row)
+  def handle_nested_objects!(row)
     # support nested values for :customer_address, :pick_up_location, :drop_off_location, :trip_result
     # these can be included in the CSV file with the object name prepended, e.g. 'trip_result_outcome'
     # upon import they are removed from the row, then added back as nested objects,
@@ -342,7 +358,7 @@ class AdapterSync
     location_hash['position'] = new_position if new_position
   end
 
-  def handle_date_conversions(row)
+  def handle_date_conversions!(row)
     # assume any date entered as ##/##/#### is mm/dd/yyyy, convert to dd/mm/yyyy the way Ruby prefers
     changed = false
     row.each do |k,v|

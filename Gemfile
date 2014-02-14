@@ -17,6 +17,7 @@ gem 'slop'
 
 group :test, :development do
   gem 'rake'
+  gem 'debugger'
   gem 'minitest'
   gem 'factory_girl'
   gem 'database_cleaner'
