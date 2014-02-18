@@ -66,9 +66,9 @@ Add `c:\adapter\ruby\bin` to your Windows PATH:
 
 Open a new Windows Command Prompt.
 
-Verify that the PATH is correct by typing `gem -v` at the command prompt.
-You should see a number similar to `1.8.24`. If you see a command not
-found error, then the PATH is incorrect.
+Verify that the PATH is correct by typing `gem -v` at the command 
+prompt. You should see a number similar to `1.8.24`. If you see a 
+command not found error, then the PATH is incorrect.
 
 Make sure the PC has an active Internet connection. The remaining steps
 will download and install additional required files.
@@ -185,13 +185,15 @@ sc stop ride_clearinghouse_adapter
     completed with no errors):
 
 ```
-# Logfile created on 2013-07-02 16:54:09 -0400 by logger.rb/31641
-
-I, [2013-07-02T16:54:09.031250 #2568]  INFO -- : Starting sync worker
+ # Logfile created on 2013-07-02 16:54:09 -0400 by logger.rb/31641
+```
+```
+I, [2013-07-02T16:54:09.031250 #2568]  INFO -- : Starting sync worker
 with command ["C:/Adapter/ruby/bin/ruby" "C:/Adapter/ruby/bin/rake"
 adapter_sync] in directory [C:/Adapter]...
-
-I, [2013-07-02T16:54:13.203125 #2568]  INFO -- : Worker process
+```
+```
+I, [2013-07-02T16:54:13.203125 #2568]  INFO -- : Worker process
 complete, pid 2552 status pid 2552 **exit 0**
 ```
 
@@ -205,7 +207,7 @@ complete, pid 2552 status pid 2552 **exit 0**
 
 ## Import Test
 
-The file `c:\adapter\test\csv\sample_tickets.csv` contains two sample
+The file `c:\adapter\test\csv\sample_tickets.csv` contains four sample
 tickets that can be imported to make sure the Adapter is working
 properly. To test, simply copy this file into `c:\adapter\tmp\import`.
 Within a minute, the Adapter should attempt to import the file and log
@@ -214,13 +216,19 @@ directory may be changed – configuration detailed below). If there is an
 error, an email notification should be sent assuming email notifications
 are properly configured.
 
-The import test will cause two fictitious trips to be posted on the
+The import test will cause four fictitious trips to be posted on the
 Clearinghouse – these can be checked by logging into the web site. There
-should be one for customer “Bob Smith” and one for “Sally Jones”. These
-should be rescinded (cancelled) as soon as possible so claimants do not
-think they are real trips. To rescind a trip, click the customer name in
-the right-hand panel to see the full trip details, then find the Rescind
-action in the left panel.
+should be one each for customers:
+
+-   Gloria Stevens
+-   Philip Carroll
+-   Teresa Jones
+-   Antonio Vasquez
+
+These should be rescinded (cancelled) as soon as possible so claimants
+do not think they are real trips. To rescind a trip, click the customer
+name in the right-hand panel to see the full trip details, then find the 
+Rescind action in the left panel.
 
 ## Integration
 
@@ -248,6 +256,41 @@ The Adapter import and export are configured (in
 
 This guide assumes familiarity with the Ride Clearinghouse and related
 terminology (trip tickets, trip claims, trip results).
+
+### Working with Array and Hstore (Hash) Fields
+
+The Clearinghouse stores several customer identifier fields as either
+array or hstore (hash) datatypes. These fields use specific formatting 
+when being stored in a CSV file, and you will need to account for this
+when preparing tickets from your local database for export to the API,
+and when importing Clearinghouse data back into your local database.
+
+#### Array Field Representation
+
+Array fields are represented in CSV in the following format:
+
+```
+customer_mobility_factors
+"{""customer_mobility_factor A"",""customer_mobility_factor B""}"
+```
+
+Note the curly braces (`{` and `}`) that wrap the expression, and the
+escaped quotes (`""`) that wrap each item. Note also that there are no
+spaces before or after the delimiting comma.
+
+#### Hstore (hash) Field Representation
+
+Hstore fields are represented in CSV in the following format:
+
+```
+customer_identifiers
+"""customer_identifier A""=>""customer_identifier B"",""customer_identifier C""=>""customer_identifier D"""
+```
+
+Note that there are NO braces that wrap the whole expression. Both keys
+and values are wrapped in escaped quotes (`""`). Use `=>` to separate
+keys and values, and commas to separate pairs. Note that there are no
+spaces before or after the `=>` or the delimiting comma.
 
 ### Share a Trip Ticket with the Clearinghouse
 
@@ -288,9 +331,9 @@ Clearinghouse and should be reported locally.
 
 This reporting is accomplished by exporting all new trips and trip
 changes seen on the Clearinghouse to a file in the configured export
-folder. The file will be named `trip_tickets.yyyy-mm-dd.hhmmss.csv` where
-`yyyy-mm-dd` is the current date and hhmmss is the time the file was
-created.
+folder. The file will be named `trip_tickets.yyyy-mm-dd.hhmmss.csv` 
+where `yyyy-mm-dd` is the current date and hhmmss is the time the file
+was created.
 
 ### Receive Claims, Comments, and Results
 
@@ -505,7 +548,8 @@ value of `completed_folder` in `config/adapter_sync.yml`.
 
 # Removal
 
-Uninstalling the Adapter is generally the process of following the installation steps in reverse: 
+Uninstalling the Adapter is generally the process of following the 
+installation steps in reverse: 
 
 -   Stop the Adapter’s Windows Service:
 
