@@ -163,7 +163,7 @@ c:\adapter\bin\remove_adapter_service
 
 # Operations
 
-## Start / Stop
+## Starting / Stopping the Windows Service
 
 -   The Adapter is started by simply starting its Windows Service, which
     is called *Ride Clearinghouse Adapter*. This can be done through
@@ -565,3 +565,43 @@ c:\adapter\bin\remove_adapter_service
 
 -   Remove `c:\adapter\ruby\bin` from your PATH.
 -   Delete all files in `c:\adapter` and delete the directory.
+
+# Development Notes
+
+## Command Line Operation
+
+If you wish to use or test the Adapter from the command line:
+
+-   Make sure your config scripts exist and are correct.
+-   From the command line, switch to the main adapter directory, then 
+    start up an Interactive Ruby (irb) session:
+
+```
+$ irb -Ilib
+```
+
+-   Include the adapter_sync library and create an instance:
+
+```
+require 'adapter_sync'
+adapter_sync = AdapterSync.new
+```
+
+-   From here you can call any method of the AdapterSync class, for 
+    example:
+
+```
+adapter_sync.poll
+```
+
+-   If you wish to use debugging, you will have to add 
+    `require 'debugger'` in lib/adapter_sync.rb before adding any 
+    `debugger` statements
+
+## Testing
+
+Some tests still require a running Clearinghouse API service. You can 
+clone the project from https://github.com/rideconnection/clearinghouse
+and run the server locally, then update the config scripts to point to
+the local service. You will also need to ensure that a Provider exists 
+and use that provider's public and private keys in the config scripts.

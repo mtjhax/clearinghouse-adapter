@@ -31,6 +31,7 @@ require 'api_client'
 require 'active_record_connection'
 require 'import'
 require 'adapter_monitor_notification'
+require 'hash_diff'
 require 'processors'
 
 model_dir = File.join(File.dirname(__FILE__), 'model')
@@ -51,6 +52,8 @@ Time.zone = "UTC"
 # would be nice if the user could configure what to consider a failure vs. a normal error).
 
 class AdapterSync
+  include HashDiff
+  
   LOG_FILE = File.expand_path(File.join('..', 'log', 'adapter_sync.log'), File.dirname(__FILE__))
   CONFIG_FILE = File.expand_path(File.join('..', 'config', 'adapter_sync.yml'), File.dirname(__FILE__))
   API_CONFIG_FILE = File.expand_path(File.join('..', 'config', 'api.yml'), File.dirname(__FILE__))
@@ -77,8 +80,8 @@ class AdapterSync
     @clearinghouse = ApiClient.new(apiconfig)
     
     # create pre- and postprocessor instances
-    require options[:processors][:pre_processor] unless options[:processors][:pre_processor].blank?
-    require options[:processors][:post_processor] unless options[:processors][:post_processor].blank?
+    require File.expand_path(File.join('..', options[:processors][:pre_processor]), File.dirname(__FILE__))  if options[:processors].try(:[], :pre_processor).present?
+    require File.expand_path(File.join('..', options[:processors][:post_processor]), File.dirname(__FILE__)) if options[:processors].try(:[], :post_processor).present?
     @pre_processor = PreProcessor.new
     @post_processor = PostProcessor.new
   end
@@ -285,12 +288,12 @@ class AdapterSync
       
       # using the changed attributes hash, remove all :_modified keys added by the hash_diff method and
       # run them through the pre_processor. Then merge any changes back into the hash_diff results
-      trip_diff.merge!(pre_processor.process_trip_hash(clean_trip_diff(trip_diff)))
+      trip_diff.merge!(pre_processor.process_trip_hash(clean_diff(trip_diff)))
 
       # pluck the modifications to claims, comments, and results out of the trip to report them separately
-      claims = trip_diff.delete(:trip_claims)
-      comments = trip_diff.delete(:trip_ticket_comments)
-      result = trip_diff.delete(:trip_result)
+      claims = trip_diff.delete(:trip_claims) || []
+      comments = trip_diff.delete(:trip_ticket_comments) || []
+      result = trip_diff.delete(:trip_result) || []
 
       # save results for export
       # make sure the trip_diff with the claims, comments, and results removed is not blank or just an ID
