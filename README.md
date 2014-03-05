@@ -8,6 +8,11 @@ mirrors your company’s Clearinghouse tickets and can be used to help
 automate the process of sending and receiving new data though the
 Clearinghouse API.
 
+Note that the terms "import" and "export" are from the point of view of
+the Clearinghouse API. This software *imports data from the local 
+system* into the API, and *exports data from the API* to the local 
+system.
+
 # Installation
 
 ## Requirements
@@ -599,6 +604,10 @@ adapter_sync.poll
     `debugger` statements
 
 ## Testing
+
+```
+bundle exec rake test
+```
 
 Some tests still require a running Clearinghouse API service. You can 
 clone the project from https://github.com/rideconnection/clearinghouse

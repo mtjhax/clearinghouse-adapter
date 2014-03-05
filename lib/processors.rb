@@ -6,6 +6,6 @@ module Processor
   end
 end
 
-class PreProcessor < Processor::Base; end
+class ExportProcessor < Processor::Base; end
 
-class PostProcessor < Processor::Base; end
+class ImportProcessor < Processor::Base; end

@@ -31,7 +31,6 @@ require 'api_client'
 require 'active_record_connection'
 require 'import'
 require 'adapter_monitor_notification'
-require 'hash_diff'
 require 'processors'
 
 model_dir = File.join(File.dirname(__FILE__), 'model')
@@ -51,17 +50,28 @@ Time.zone = "UTC"
 # be logged and optionally cause a notification, but don't really constitute an "outage" (although it
 # would be nice if the user could configure what to consider a failure vs. a normal error).
 
-class AdapterSync
-  include HashDiff
-  
-  LOG_FILE = File.expand_path(File.join('..', 'log', 'adapter_sync.log'), File.dirname(__FILE__))
-  CONFIG_FILE = File.expand_path(File.join('..', 'config', 'adapter_sync.yml'), File.dirname(__FILE__))
-  API_CONFIG_FILE = File.expand_path(File.join('..', 'config', 'api.yml'), File.dirname(__FILE__))
-  DB_CONFIG_FILE = File.expand_path(File.join('..', 'config', 'database.yml'), File.dirname(__FILE__))
-  MIGRATIONS_DIR = File.expand_path(File.join('..', 'db', 'migrations'), File.dirname(__FILE__))
+=begin
+TASK Refactor Adapter change comparison and what pre-/post-processors are used for
+TODO Remove code that diffs data being exported to API
+TODO Remove code that diffs data being imported from API
+TODO Create new ExportProcessorBase class. It should accept API data as a parsed JSON array, perform any data massaging necessary (the base class may not need to do this, but allow it to be done for sub classes), and it should finish by dumping the data to a flat CSV file (one per object type). Ensure that hstore and array fields are represented as proper columns: one column for each value for arrays; one column each for every key and value for hstores
+TODO Create new ImportProcessorBase class. It should pick up flat CSV files in the same format as how the ImportProcessorBase class writes them, perform any data massaging necessary (the base class may not need to do this, but allow it to be done for sub classes), and finish by POSTing the data to the proper API endpoint.
+TODO Simplify sync process - find export files and call export processor, then poll API and call import processor.
+TODO ~Remove HashDiff library since it won't be used anymore~
+=end
 
-  attr_accessor :options, :logger, :errors, :trip_updates, :claim_updates, :comment_updates, :result_updates,
-    :pre_processor, :post_processor
+class AdapterSync
+  BASE_DIR        = File.expand_path('..', File.dirname(__FILE__))
+  LOG_FILE        = File.join(BASE_DIR, 'log', 'adapter_sync.log')
+  CONFIG_FILE     = File.join(BASE_DIR, 'config', 'adapter_sync.yml')
+  API_CONFIG_FILE = File.join(BASE_DIR, 'config', 'api.yml')
+  DB_CONFIG_FILE  = File.join(BASE_DIR, 'config', 'database.yml')
+  MIGRATIONS_DIR  = File.join(BASE_DIR, 'db', 'migrations')
+  PROCESSORS_DIR  = File.join(BASE_DIR, 'processors')
+
+  attr_accessor :options, :logger, :errors, :trip_updates, 
+    :claim_updates, :comment_updates, :result_updates, 
+    :export_processor, :import_processor
 
   def initialize(opts = {})
     @logger = Logger.new(LOG_FILE, 'weekly')
@@ -79,11 +89,11 @@ class AdapterSync
     apiconfig['raw'] = false
     @clearinghouse = ApiClient.new(apiconfig)
     
-    # create pre- and postprocessor instances
-    require File.expand_path(File.join('..', options[:processors][:pre_processor]), File.dirname(__FILE__))  if options[:processors].try(:[], :pre_processor).present?
-    require File.expand_path(File.join('..', options[:processors][:post_processor]), File.dirname(__FILE__)) if options[:processors].try(:[], :post_processor).present?
-    @pre_processor = PreProcessor.new
-    @post_processor = PostProcessor.new
+    # create ExportProcessor and ImportProcessor instances
+    require File.join(PROCESSORS_DIR, options[:processors][:export_processor]) if options[:processors].try(:[], :export_processor).present?
+    require File.join(PROCESSORS_DIR, options[:processors][:import_processor]) if options[:processors].try(:[], :import_processor).present?
+    @export_processor = ExportProcessor.new
+    @import_processor = ImportProcessor.new
   end
 
   def poll
@@ -168,7 +178,7 @@ class AdapterSync
       else
         handle_nested_objects!(row)
         handle_date_conversions!(row)
-        row = post_processor.process_trip_hash(row)
+        row = import_processor.process_trip_hash(row)
 
         # trips on the provider are uniquely identified by trip ID and appointment time because some trip tickets are
         # recycled, but these should represent new trips on the Clearinghouse and are stored as new trips in the
@@ -266,8 +276,8 @@ class AdapterSync
     adapter_trip = TripTicket.find_by_ch_id(trip_hash[:id])
 
     if adapter_trip.nil?
-      # duplicate the trip_hash for export (original hash will be saved in the database), and run it through any pre_processing
-      trip = pre_processor.process_trip_hash(trip_hash.dup)
+      # duplicate the trip_hash for export (original hash will be saved in the database), and run it through any export_processing
+      trip = export_processor.process_trip_hash(trip_hash.dup)
 
       # pluck the modifications to claims, comments, and results out of the trip to report them separately
       claims = trip.delete(:trip_claims)
@@ -287,8 +297,8 @@ class AdapterSync
       trip_diff = hash_diff(adapter_trip.ch_data_hash, trip_hash).with_indifferent_access
       
       # using the changed attributes hash, remove all :_modified keys added by the hash_diff method and
-      # run them through the pre_processor. Then merge any changes back into the hash_diff results
-      trip_diff.merge!(pre_processor.process_trip_hash(clean_diff(trip_diff)))
+      # run them through the export_processor. Then merge any changes back into the hash_diff results
+      trip_diff.merge!(export_processor.process_trip_hash(clean_diff(trip_diff)))
 
       # pluck the modifications to claims, comments, and results out of the trip to report them separately
       claims = trip_diff.delete(:trip_claims) || []
@@ -375,11 +385,6 @@ class AdapterSync
       end
     end
     changed
-  end
-
-  def record_changes(diff_hash, save_list)
-    update_type = (diff_hash.has_key?(:_new) || diff_hash.has_key?('_new')) ? 'new_record' : 'modified'
-    save_list << { update_type: update_type }.merge(clean_diff(diff_hash))
   end
 
   def post_new_trip(trip_hash)
