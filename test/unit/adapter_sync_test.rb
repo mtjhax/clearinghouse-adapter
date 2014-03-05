@@ -57,7 +57,7 @@ describe AdapterSync do
     end
 
 =begin
-    TODO move export_csv to ImportProcessorBase class and move this test to that unit test
+    TODO move export_csv to ExportProcessorBase class and move this test to that unit test
 
     it "exports replicated changes as CSV files" do
       trip_changes = { 'update_type' => 'modified', 'id' => 1, 'customer_first_name' => 'Bob' }
@@ -87,7 +87,7 @@ describe AdapterSync do
     end
 
 =begin
-    TODO move Import class functionality to the ExportProcessorBase class and move this test to that unit test
+    TODO move Import class functionality to the ImportProcessorBase class and move this test to that unit test
     
     it "attempts to import flat files" do
       Import.any_instance.expects(:importable_files).with(@adapter_options[:import][:import_folder]).at_least_once.returns([])

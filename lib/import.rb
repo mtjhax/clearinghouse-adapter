@@ -17,6 +17,10 @@ require 'logger'
 require 'fileutils'
 require 'active_support/core_ext/hash/indifferent_access'
 
+=begin
+TODO Move Import class functionality to the ImportProcessorBase class
+=end
+
 # Import
 #
 # A generic class to simplify importing a file or folder of files that logs results
