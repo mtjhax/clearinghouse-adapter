@@ -80,14 +80,14 @@ class AdapterSync
   MIGRATIONS_DIR  = File.join(BASE_DIR, 'db', 'migrations')
   PROCESSORS_DIR  = File.join(BASE_DIR, 'processors')
 
-  attr_accessor :options, :logger, :errors, :updated_trips, 
-    :export_processor, :import_processor
+  attr_accessor :options, :logger, :errors, :exported_trips, 
+    :imported_trips, :export_processor, :import_processor
 
   def initialize(opts = {})
     @logger = Logger.new(LOG_FILE, 'weekly')
     @options = opts.presence || load_config(CONFIG_FILE)
 
-    @errors, @updated_trips = [[], []]
+    @errors, @exported_trips, @imported_trips = [[], [], []]
 
     # open the database, creating it if necessary, and make sure up to date with latest migrations
     @connection = ActiveRecordConnection.new(logger, load_config(DB_CONFIG_FILE)[ENV["ADAPTER_ENV"]])
@@ -106,9 +106,11 @@ class AdapterSync
   end
 
   def poll
-    @errors, @updated_trips = [[], []]
+    @errors, @exported_trips, @imported_trips = [[], [], []]
     replicate_clearinghouse
+    @errors = []
     export_tickets
+    @errors = []
     import_tickets
   rescue Exception => e
     logger.error e.message + "\n" + e.backtrace.join("\n")
@@ -119,7 +121,7 @@ class AdapterSync
     last_updated_at = most_recent_tracked_update_time
     trips = get_updated_clearinghouse_trips(last_updated_at)
     logger.info "Retrieved #{trips.length} updated trips from API"
-    @updated_trips = trips.collect{|trip|
+    @exported_trips = trips.collect{|trip|
       trip_data = trip.data.deep_dup
       process_updated_clearinghouse_trip(trip_data)
     }.compact
@@ -127,93 +129,41 @@ class AdapterSync
   end
 
   def export_tickets
-    export_processor.process(@updated_trips) if options[:export][:enabled]
+    return unless options[:export][:enabled]
+    export_processor.process(@exported_trips)
     report_errors "processing the exported trip tickets", export_processor.errors
   end
 
-  # TODO - refactor to use ImportProcessor. It should start by calling 
-  # import_processor.process with no arguments (the ImportProcessor)
-  # class is responsible for aquring the import data, by reading flat
-  # files, or reading from the DB directly, etc.). It should return 
-  # an array of trip ticket attribute hashes (JSON-style) to post to
-  # the CH API
   def import_tickets
     return unless options[:import][:enabled]
-    import_dir = options[:import][:import_folder]
-    output_dir = options[:import][:completed_folder]
-    import = Import.new
-
-    logger.info "Starting import from directory [#{import_dir}] with output directory [#{output_dir || 'n/a'}]"
-
-    # ensure import directory is configured and exists
-    err_msg = import.check_directory(import_dir)
-    raise err_msg if err_msg
-
-    # check each file the import thinks it can work with to see if we imported it previously
-    skips = []
-    import.importable_files(import_dir).each do |file|
-      size = File.size(file)
-      modified = File.mtime(file)
-      if ImportedFile.where(file_name: file, size: size, modified: modified).count > 0
-        logger.warn "Skipping file #{file} which was previously imported"
-        skips << file
-      end
-    end
-
-    # import folder and process each imported row
-    import_results = import.from_folder(import_dir, output_dir, skips) do |row, log|
-      if row[:origin_trip_id].nil?
-        raise Import::RowError, "Imported row does not contain an origin_trip_id value"
+    @imported_trips = import_processor.process
+    @imported_trips.each do |trip_hash|
+      trip_hash = trip_hash.with_indifferent_access
+      if trip_hash[:origin_trip_id].nil?
+        @errors << "A trip ticket from the local system did not contain an origin_trip_id value. It will not be imported."
       else
-        handle_nested_objects!(row)
-        handle_date_conversions!(row)
-        # row = import_processor.process_trip_hash(row)
+        adapter_trip = TripTicket.find_or_create_by_origin_trip_id_and_appointment_time(trip_hash[:origin_trip_id], Time.zone.parse(trip_hash[:appointment_time]))
 
-        # trips on the provider are uniquely identified by trip ID and appointment time because some trip tickets are
-        # recycled, but these should represent new trips on the Clearinghouse and are stored as new trips in the
-        # Adapter so the corresponding Clearinghouse IDs can each be stored
-
-        trip = TripTicket.find_or_create_by_origin_trip_id_and_appointment_time(row[:origin_trip_id], Time.zone.parse(row[:appointment_time]))
-
-        unless trip.synced?
-          api_result = post_new_trip(row)
-          log.info "POST trip ticket with API, result #{api_result}"
+        unless adapter_trip.synced?
+          api_result = post_new_trip(trip_hash)
+          logger.info "POST trip ticket with API, result #{api_result}"
         else
-          # trip is already tracked, see if we need to update the CH
-          # Note: for now we just try an update and see what happens, we need to deal with error if no fields changed
-          api_result = put_trip_changes(trip.ch_id, row)
-          log.info "PUT trip ticket with API, result #{api_result}"
+          api_result = put_trip_changes(adapter_trip.ch_id, trip_hash)
+          logger.info "PUT trip ticket with API, result #{api_result}"
         end
 
-        raise Import::RowError, "API result does not contain an ID" if api_result[:id].nil?
-
-        trip.map_attributes(api_result.data).save!
-      end
-    end
-
-    logger.info "Imported #{import_results.length} files"
-    import_results.each do |r|
-      logger.info r.to_s
-      # as an extra layer of safety, record files that were imported so we can avoid reimporting them
-      ImportedFile.create(r)
-      # send notifications for files that contained errors
-      if r[:error] || r[:row_errors].to_i > 0
-        msg = "Encountered #{r[:row_errors]} errors while importing file #{r[:file_name]} at #{r[:created_at]}:\n#{r[:error_msg]}"
-        begin
-          AdapterNotification.new(error: msg).send
-        rescue Exception => e
-          logger.error "Error notification failed, could not send email: #{e}"
+        if api_result[:id].nil?
+          @errors << "API result does not contain an ID. Result data will not be saved."
+        else
+          adapter_trip.map_attributes(api_result.data).save!
         end
       end
     end
+
+    report_errors "processing the imported trip tickets", import_processor.errors + @errors
   end
 
   protected
-
-  # TODO - refactor into ExportProcessor
-  def timestamp_string
-    Time.zone.now.strftime("%Y-%m-%d.%H%M%S")
-  end
 
   def most_recent_tracked_update_time
     TripTicket.maximum('ch_updated_at').try(:utc)
@@ -283,78 +233,6 @@ class AdapterSync
     end
   end
 
-  # TODO - refactor to ImportProcessor?
-  def handle_nested_objects!(row)
-    # support nested values for :customer_address, :pick_up_location, :drop_off_location, :trip_result
-    # these can be included in the CSV file with the object name prepended, e.g. 'trip_result_outcome'
-    # upon import they are removed from the row, then added back as nested objects,
-    # e.g.: row['trip_result_attributes'] = { 'outcome' => ... })
-
-    customer_address_hash = nested_object_to_hash(row, 'customer_address_')
-    pick_up_location_hash = nested_object_to_hash(row, 'pick_up_location_')
-    drop_off_location_hash = nested_object_to_hash(row, 'drop_off_location_')
-    trip_result_hash = nested_object_to_hash(row, 'trip_result_')
-
-    normalize_location_coordinates(customer_address_hash)
-    normalize_location_coordinates(pick_up_location_hash)
-    normalize_location_coordinates(drop_off_location_hash)
-
-    row['customer_address_attributes'] = customer_address_hash if customer_address_hash.present?
-    row['pick_up_location_attributes'] = pick_up_location_hash if pick_up_location_hash.present?
-    row['drop_off_location_attributes'] = drop_off_location_hash if drop_off_location_hash.present?
-    row['trip_result_attributes'] = trip_result_hash if trip_result_hash.present?
-  end
-
-  # TODO - refactor to ImportProcessor?
-  def nested_object_to_hash(row, prefix)
-    new_hash = {}
-    row.select do |k, v|
-      if k.to_s.start_with?(prefix)
-        new_key = k.to_s.gsub(Regexp.new("^#{prefix}"), '')
-        new_hash[new_key] = row.delete(k)
-      end
-    end
-    new_hash
-  end
-
-  # TODO - refactor to ImportProcessor?
-  # normalize accepted location coordinate formats to WKT
-  # accepted:
-  # location_hash['lat'] and location_hash['lon']
-  # location_hash['position'] = "lon lat" (punction ignored except dash, e.g. lon:lat, lon,lat, etc.)
-  # location_hash['position'] = "POINT(lon lat)"
-  def normalize_location_coordinates(location_hash)
-    lat = location_hash.delete('lat')
-    lon = location_hash.delete('lon')
-    position = location_hash.delete('position')
-    new_position = position
-    if lon.present? && lat.present?
-      new_position = "POINT(#{lon} #{lat})"
-    elsif position.present?
-      match = position.match(/^\s*([\d\.\-]+)[^\d-]+([\d\.\-]+)\s*$/)
-      new_position = "POINT(#{match[1]} #{match[2]})" if match
-    end
-    location_hash['position'] = new_position if new_position
-  end
-
-  # TODO - refactor to ImportProcessor?
-  def handle_date_conversions!(row)
-    # assume any date entered as ##/##/#### is mm/dd/yyyy, convert to
-    # dd/mm/yyyy the way Ruby prefers
-    changed = false
-    row.each do |k,v|
-      parts = k.rpartition('_')
-      if parts[1] == '_' && ['date', 'time', 'at', 'on', 'dob'].include?(parts[2])
-        if v =~ /^(\d{1,2})\/(\d{1,2})\/(\d{4})(.*)$/
-          new_val = "#{ "%02d" % $2 }/#{ "%02d" % $1 }/#{ $3 }#{ $4 }"
-          row[k] = new_val
-          changed = true
-        end
-      end
-    end
-    changed
-  end
-
   def post_new_trip(trip_hash)
     begin
       @clearinghouse.post(:trip_tickets, trip_hash)
@@ -376,7 +254,7 @@ class AdapterSync
       # in development mode, don't suppress the original exception
       raise
     else
-      raise Import::RowError, message
+      raise message
     end
   end
 

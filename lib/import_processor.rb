@@ -12,7 +12,12 @@ module Processor
       def process
         raise "You must impliment this method in your ImportProcessor class"
       end
-    end 
+      
+      # TODO Do we need this? What arguments should it receive?
+      def finalize
+        raise "You must impliment this method in your ImportProcessor class"
+      end
+    end
   end
 end
 
