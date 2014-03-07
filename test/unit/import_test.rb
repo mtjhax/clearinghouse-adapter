@@ -15,10 +15,10 @@
 require 'test_helper'
 require 'fileutils'
 require 'import'
-require 'support/import_helpers'
+require 'support/file_helpers'
 
 describe Import do
-  include ImportHelpers
+  include FileHelpers
 
   before do
     @input_folder = 'tmp/_import_test'

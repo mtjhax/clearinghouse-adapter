@@ -16,10 +16,7 @@ require 'minitest/autorun'
 require 'fileutils'
 require 'csv'
 
-module ImportHelpers
-
-  # helpers for testing Import class
-
+module FileHelpers
   def create_csv(folder, file_name, headers = [], data = [])
     file_name = File.join(File.expand_path(folder), file_name)
     CSV.open(file_name, 'w' ) do |csv|
@@ -58,5 +55,11 @@ module ImportHelpers
       FileUtils.rmdir f if File.exist?(f)
     end
   end
-
+  
+  def read_csv(folder, file_name)
+    csv = CSV.open(File.join(File.expand_path(folder), file_name), headers: true, return_headers: false)
+    data = csv.read
+    csv.close
+    data
+  end
 end

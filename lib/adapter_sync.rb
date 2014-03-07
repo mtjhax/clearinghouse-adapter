@@ -23,10 +23,8 @@ require 'rbconfig'
 require 'logger'
 require 'active_support/core_ext/object'
 require 'active_support/core_ext/hash'
-require 'hash'
-
-# TODO is this lib still required?
 require 'active_support/time_with_zone'
+require 'hash'
 
 require 'api_client'
 require 'active_record_connection'
@@ -82,7 +80,7 @@ class AdapterSync
 
   attr_accessor :options, :logger, :errors, :exported_trips, 
     :imported_trips, :export_processor, :import_processor
-
+    
   def initialize(opts = {})
     @logger = Logger.new(LOG_FILE, 'weekly')
     @options = opts.presence || load_config(CONFIG_FILE)

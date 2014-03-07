@@ -1,10 +1,12 @@
+require 'logger'
+
 module Processor
   module Import
     class Base
       attr_accessor :logger, :options, :errors
       
       def initialize(logger = nil, options = {})
-        @logger = logger
+        @logger = logger || Logger.new(File.join(BASE_DIR, 'log', 'export_processor.log'), 'weekly')
         @options = options
         @errors = []
       end

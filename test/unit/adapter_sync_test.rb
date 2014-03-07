@@ -13,7 +13,6 @@
 # limitations under the License.
 
 require 'test_helper'
-require 'fileutils'
 require 'adapter_sync'
 
 describe AdapterSync do
@@ -213,7 +212,7 @@ describe AdapterSync do
         appointment_time: '3 August 2013, 10:00:00 UTC',
         requested_drop_off_time: '13:00',
         customer_information_withheld: false,
-        scheduling_priority: 'pickup'
+        scheduling_priority: 'pickup',
       }
       @adapter.import_processor.stubs(:process).returns([@minimum_trip_attributes])
     end
