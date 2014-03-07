@@ -186,14 +186,12 @@ describe AdapterSync do
     end
 
     it "calls the export processor step if enabled and passes in the updated trips" do
-      @adapter.options[:export][:enabled] = true
       @adapter.exported_trips = [{'id' => '1'}]
       @adapter.export_processor.expects(:process).with(@adapter.exported_trips).once
       @adapter.export_tickets
     end
 
     it "reports any errors logged by the export processor" do
-      @adapter.options[:export][:enabled] = true
       @adapter.export_processor.stubs(:errors).returns(["error"])
       AdapterNotification.any_instance.expects(:send).once
       @adapter.export_tickets
@@ -216,6 +214,7 @@ describe AdapterSync do
         customer_information_withheld: false,
         scheduling_priority: 'pickup'
       }
+      @adapter.import_processor.stubs(:process).returns([@minimum_trip_attributes])
     end
   
     it "skips import step if not enabled" do
@@ -225,18 +224,56 @@ describe AdapterSync do
     end
   
     it "calls the import processor step if enabled" do
-      @adapter.options[:import][:enabled] = true
       @adapter.import_processor.expects(:process).once.returns([])
       @adapter.import_tickets
     end
 
     it "reports any errors logged by the import processor" do
-      @adapter.options[:import][:enabled] = true
+      stub_result = ApiClient.new.tap {|result| result[:id] = 1379 }
+      ApiClient.any_instance.expects(:post).once.returns(stub_result)
       @adapter.import_processor.stubs(:errors).returns(["error"])
       AdapterNotification.any_instance.expects(:send).once
       @adapter.import_tickets
     end
   
+    it "sends new trips to the Clearinghouse API with POST" do
+      stub_result = ApiClient.new.tap {|result| result[:id] = 1379 }
+      ApiClient.any_instance.expects(:post).once.returns(stub_result)
+      @adapter.import_tickets
+    end
+    
+    it "uses origin_trip_id and appointment_time to find trips that are already being tracked" do
+      stub_result = ApiClient.new.tap {|result| result[:id] = 1379 }
+      ApiClient.any_instance.stubs(:post).returns(stub_result)
+      TripTicket.expects(:find_or_create_by_origin_trip_id_and_appointment_time).with(@minimum_trip_attributes[:origin_trip_id], @minimum_trip_attributes[:appointment_time]).returns(TripTicket.new)
+      @adapter.import_tickets
+    end
+  
+    it "creates new trips in the local database" do
+      stub_result = ApiClient.new.tap {|result| result[:id] = 1379 }
+      stub_result.stubs(:data).returns(@minimum_trip_attributes.merge({id: 1379}))
+      ApiClient.any_instance.stubs(:post).returns(stub_result)
+      @adapter.import_tickets
+      TripTicket.first.ch_data_hash[:customer_last_name].must_equal 'Smith'
+    end
+  
+    it "updates existing trips on the Clearinghouse with PUT" do
+      create(:trip_ticket, ch_id: 1379, origin_trip_id: @minimum_trip_attributes[:origin_trip_id], appointment_time: @minimum_trip_attributes[:appointment_time])
+      stub_result = ApiClient.new.tap {|result| result[:id] = 1379 }
+      ApiClient.any_instance.expects(:put).once.returns(stub_result)
+      @adapter.import_tickets
+    end
+  
+    it "updates tracked trips in the local database with changes" do
+      create(:trip_ticket, ch_id: 1379, origin_trip_id: @minimum_trip_attributes[:origin_trip_id], appointment_time: @minimum_trip_attributes[:appointment_time], ch_data: {customer_last_name: "Jones"})
+      stub_result = ApiClient.new.tap {|result| result[:id] = 1379 }
+      stub_result.stubs(:data).returns(@minimum_trip_attributes.merge({id: 1379}))
+      ApiClient.any_instance.stubs(:put).returns(stub_result)
+      @adapter.import_tickets
+      TripTicket.first.ch_data_hash[:customer_last_name].must_equal 'Smith'
+    end
+    
+    # TODO 
     it "tracks imported rows to prevent reimport" do
       skip
       create_csv(@input_folder, 'test3.csv', @minimum_trip_attributes.keys, [@minimum_trip_attributes.values])
@@ -272,14 +309,6 @@ describe AdapterSync do
       imported_file.row_errors.must_equal 1
     end
   
-    it "sends new trips to the Clearinghouse API with POST" do
-      skip
-      create_csv(@input_folder, 'test6.csv', @minimum_trip_attributes.keys, [@minimum_trip_attributes.values])
-      stub_result = ApiClient.new.tap {|result| result[:id] = 1379 }
-      ApiClient.any_instance.expects(:post).once.returns(stub_result)
-      @adapter.import_tickets
-    end
-    
     # TODO do we need this after refactor?
     it "supports import of nested objects" do
       skip
@@ -289,48 +318,6 @@ describe AdapterSync do
       stub_result = ApiClient.new.tap {|result| result[:id] = 1379 }
       ApiClient.any_instance.expects(:post).with(:trip_tickets, has_entry(customer_address_attrs)).once.returns(stub_result)
       @adapter.import_tickets
-    end
-  
-    it "uses origin_trip_id and appointment_time to find trips that are already being tracked" do
-      skip
-      create_csv(@input_folder, 'test8.csv', @minimum_trip_attributes.keys, [@minimum_trip_attributes.values])
-      stub_result = ApiClient.new.tap {|result| result[:id] = 1379 }
-      ApiClient.any_instance.stubs(:post).returns(stub_result)
-      TripTicket.expects(:find_or_create_by_origin_trip_id_and_appointment_time).with(@minimum_trip_attributes[:origin_trip_id].to_s, @minimum_trip_attributes[:appointment_time]).returns(TripTicket.new)
-      @adapter.import_tickets
-    end
-  
-    it "creates new trips in the local database" do
-      skip
-      VCR.use_cassette('AdapterSync#import_tickets trip create test') do
-        create_csv(@input_folder, 'test9.csv', @minimum_trip_attributes.keys, [@minimum_trip_attributes.values])
-        @adapter.import_tickets
-        TripTicket.first.ch_data_hash[:customer_last_name].must_equal 'Smith'
-      end
-    end
-  
-    it "updates existing trips on the Clearinghouse with PUT" do
-      skip
-      create_csv(@input_folder, 'test10.csv', @minimum_trip_attributes.keys, [@minimum_trip_attributes.values])
-      create(:trip_ticket, ch_id: 1379, origin_trip_id: @minimum_trip_attributes[:origin_trip_id], appointment_time: @minimum_trip_attributes[:appointment_time])
-      stub_result = ApiClient.new.tap {|result| result[:id] = 1379 }
-      ApiClient.any_instance.expects(:put).once.returns(stub_result)
-      @adapter.import_tickets
-    end
-  
-    it "updates tracked trips in the local database with changes" do
-      skip
-      VCR.use_cassette('AdapterSync#import_tickets trip update test') do
-        create_csv(@input_folder, 'test11.csv', @minimum_trip_attributes.keys, [@minimum_trip_attributes.values])
-        @adapter.import_tickets
-        trip = TripTicket.first
-        trip.ch_data_hash[:customer_last_name].must_equal 'Smith'
-  
-        create_csv(@input_folder, 'test12.csv', @updated_trip_attributes.keys, [@updated_trip_attributes.values])
-        @adapter.import_tickets
-        trip.reload
-        trip.ch_data_hash[:customer_last_name].must_equal 'Nohara'
-      end
     end
   
     it "sends notifications for files that contained errors" do
