@@ -13,8 +13,7 @@ module Processor
         raise "You must impliment this method in your ImportProcessor class"
       end
       
-      # TODO Do we need this? What arguments should it receive?
-      def finalize
+      def finalize(imported_rows, skipped_rows, unposted_rows)
         raise "You must impliment this method in your ImportProcessor class"
       end
     end

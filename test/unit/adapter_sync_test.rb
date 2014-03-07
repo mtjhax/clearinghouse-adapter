@@ -21,6 +21,7 @@ describe AdapterSync do
     AdapterNotification.any_instance.stubs(:send)
     ExportProcessor.any_instance.stubs(:process)
     ImportProcessor.any_instance.stubs(:process).returns([])
+    ImportProcessor.any_instance.stubs(:finalize)
 
     @adapter = AdapterSync.new
 
@@ -267,73 +268,38 @@ describe AdapterSync do
     it "updates tracked trips in the local database with changes" do
       create(:trip_ticket, ch_id: 1379, origin_trip_id: @minimum_trip_attributes[:origin_trip_id], appointment_time: @minimum_trip_attributes[:appointment_time], ch_data: {customer_last_name: "Jones"})
       stub_result = ApiClient.new.tap {|result| result[:id] = 1379 }
-      stub_result.stubs(:data).returns(@minimum_trip_attributes.merge({id: 1379}))
+      stub_result.stubs(:data).returns(@minimum_trip_attributes)
       ApiClient.any_instance.stubs(:put).returns(stub_result)
       @adapter.import_tickets
       TripTicket.first.ch_data_hash[:customer_last_name].must_equal 'Smith'
     end
     
-    # TODO 
-    it "tracks imported rows to prevent reimport" do
-      skip
-      create_csv(@input_folder, 'test3.csv', @minimum_trip_attributes.keys, [@minimum_trip_attributes.values])
+    it "calls ImportProcessor#finalize after processing" do
+      @adapter.import_processor.stubs(:process).returns([])
+      @adapter.import_processor.expects(:finalize).with([], [], []).once()
+      @adapter.import_tickets
+    end
+
+    it "passes all imported rows to ImportProcessor#finalize after processing" do
       stub_result = ApiClient.new.tap {|result| result[:id] = 1379 }
       ApiClient.any_instance.expects(:post).once.returns(stub_result)
+      @adapter.import_processor.expects(:finalize).with([@minimum_trip_attributes.with_indifferent_access], [], []).once()
       @adapter.import_tickets
-      TripTicket.count.must_equal 1
-      trip = TripTicket.first
-      trip.origin_trip_id.must_equal @minimum_trip_attributes[:origin_trip_id]
-      trip.ch_id.must_equal 1379
     end
-  
-    it "marks rows as errors if they do not contain an origin_trip_id" do
-      skip
-      attrs = @minimum_trip_attributes.tap {|h| h.delete(:origin_trip_id) }
-      file = create_csv(@input_folder, 'test4.csv', attrs.keys, [attrs.values])
-      @adapter.import_tickets
-      ImportedFile.count.must_equal 1
-      imported_file = ImportedFile.first
-      imported_file.file_name.must_equal file
-      imported_file.rows.must_equal 1
-      imported_file.row_errors.must_equal 1
-    end
-  
-    it "marks rows as errors if they cannot be sent to the Clearinghouse API" do
-      skip
-      create_csv(@input_folder, 'test5.csv', @minimum_trip_attributes.keys, [@minimum_trip_attributes.values])
-      ApiClient.any_instance.stubs(:post).raises(RuntimeError, "This row blew up the API")
-      @adapter.import_tickets
-      ImportedFile.count.must_equal 1
-      imported_file = ImportedFile.first
-      imported_file.rows.must_equal 1
-      imported_file.row_errors.must_equal 1
-    end
-  
-    # TODO do we need this after refactor?
-    it "supports import of nested objects" do
-      skip
-      attrs = @minimum_trip_attributes.merge(@customer_address_attributes)
-      customer_address_attrs = { 'customer_address_attributes' => @posted_customer_address_attributes.stringify_keys }
-      create_csv(@input_folder, 'test7.csv', attrs.keys, [attrs.values])
+
+    it "passes malformed rows to ImportProcessor#finalize after processing" do
+      bad_hash = @minimum_trip_attributes.merge({origin_trip_id: nil})
+      @adapter.import_processor.stubs(:process).returns([bad_hash])
       stub_result = ApiClient.new.tap {|result| result[:id] = 1379 }
-      ApiClient.any_instance.expects(:post).with(:trip_tickets, has_entry(customer_address_attrs)).once.returns(stub_result)
+      @adapter.import_processor.expects(:finalize).with([], [bad_hash.with_indifferent_access], []).once()
       @adapter.import_tickets
     end
-  
-    it "sends notifications for files that contained errors" do
-      skip
-      create_illegal_csv(@input_folder, 'test13.csv')
-      AdapterNotification.any_instance.expects(:send).once
+
+    it "passes rows that didn't return as expected from the API to ImportProcessor#finalize after processing" do
+      stub_result = ApiClient.new
+      ApiClient.any_instance.expects(:post).once.returns(stub_result)
+      @adapter.import_processor.expects(:finalize).with([], [], [@minimum_trip_attributes.with_indifferent_access]).once()
       @adapter.import_tickets
-    end
-  
-    it "should support dates formatted as mm/dd/yyyy instead of dd/mm/yyyy" do
-      skip
-      VCR.use_cassette('AdapterSync#import_tickets trip create test') do
-        create_csv(@input_folder, 'test14.csv', @minimum_trip_attributes.keys, [@minimum_trip_attributes.values])
-        @adapter.import_tickets
-        TripTicket.first.ch_data_hash[:customer_dob].must_equal "1955-01-02"
-      end
     end
   end
 end

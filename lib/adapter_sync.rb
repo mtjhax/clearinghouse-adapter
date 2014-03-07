@@ -137,10 +137,13 @@ class AdapterSync
   def import_tickets
     return unless options[:import][:enabled]
     @imported_trips = import_processor.process
+    
+    imported_rows, skipped_rows, unposted_rows = [[], [], []]
     @imported_trips.each do |trip_hash|
       trip_hash = trip_hash.with_indifferent_access
       if trip_hash[:origin_trip_id].nil?
         @errors << "A trip ticket from the local system did not contain an origin_trip_id value. It will not be imported."
+        skipped_rows << trip_hash
       else
         adapter_trip = TripTicket.find_or_create_by_origin_trip_id_and_appointment_time(trip_hash[:origin_trip_id], Time.zone.parse(trip_hash[:appointment_time]))
 
@@ -154,12 +157,16 @@ class AdapterSync
 
         if api_result[:id].nil?
           @errors << "API result does not contain an ID. Result data will not be saved."
+          unposted_rows << trip_hash
         else
           adapter_trip.map_attributes(api_result.data).save!
+          imported_rows << trip_hash
         end
       end
     end
-
+    
+    import_processor.finalize(imported_rows, skipped_rows, unposted_rows)
+    
     report_errors "processing the imported trip tickets", import_processor.errors + @errors
   end
 
