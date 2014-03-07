@@ -13,7 +13,6 @@
 # limitations under the License.
 
 FactoryGirl.define do
-
   factory :imported_file do
     file_name "import.csv"
     modified Time.now.utc
@@ -33,5 +32,4 @@ FactoryGirl.define do
     origin_trip_id 111
     appointment_time '1 August 2013 12:00:00 UTC'
   end
-
 end

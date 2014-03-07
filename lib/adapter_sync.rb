@@ -23,16 +23,22 @@ require 'rbconfig'
 require 'logger'
 require 'active_support/core_ext/object'
 require 'active_support/core_ext/hash'
-require 'active_support/time_with_zone'
+require 'hash'
 
-require 'csv'
+# TODO is this lib still required?
+require 'active_support/time_with_zone'
 
 require 'api_client'
 require 'active_record_connection'
-require 'import'
 require 'adapter_monitor_notification'
 require 'export_processor'
 require 'import_processor'
+
+# TODO remove after refactoring
+require 'debugger'
+
+# TODO refactor this into the ImportProcessor class
+require 'import'
 
 model_dir = File.join(File.dirname(__FILE__), 'model')
 $LOAD_PATH.unshift(model_dir)
@@ -59,7 +65,10 @@ TODO ~Remove code that diffs data being imported from API~
 TODO Create new ExportProcessorBase class. It should accept API data as a parsed JSON array, perform any data massaging necessary (the base class may not need to do this, but allow it to be done for sub classes), and it should finish by dumping the data to a flat CSV file (one per object type). Ensure that hstore and array fields are represented as proper columns: one column for each value for arrays; one column each for every key and value for hstores
 TODO Create new ImportProcessorBase class. It should pick up flat CSV files in the same format as how the ImportProcessorBase class writes them, perform any data massaging necessary (the base class may not need to do this, but allow it to be done for sub classes), and finish by POSTing the data to the proper API endpoint.
 TODO Move export_csv to ExportProcessorBase class
-TODO Simplify sync process - find export files and call export processor, then poll API and call import processor.
+TODO Simplify sync process - poll API for incoming updates, call export processor, call import processor, send outgoing updates to API
+TODO Remove the imported_file migration and refactor that into the ImportProcessor class. 
+TODO Alternately, refactor the import table to just track generic strings that the ImportProcessor can poll - upside: convenient, downside: requires Processor class have implementation knowledge about AdapterSync
+TODO Add OS license blurb to new files
 =end
 
 class AdapterSync
@@ -71,16 +80,14 @@ class AdapterSync
   MIGRATIONS_DIR  = File.join(BASE_DIR, 'db', 'migrations')
   PROCESSORS_DIR  = File.join(BASE_DIR, 'processors')
 
-  attr_accessor :options, :logger, :errors, :trip_updates, 
-    :claim_updates, :comment_updates, :result_updates, 
+  attr_accessor :options, :logger, :errors, :updated_trips, 
     :export_processor, :import_processor
 
   def initialize(opts = {})
     @logger = Logger.new(LOG_FILE, 'weekly')
     @options = opts.presence || load_config(CONFIG_FILE)
 
-    @errors = []
-    @trip_updates, @claim_updates, @comment_updates, @result_updates = [[], [], [], []]
+    @errors, @updated_trips = [[], []]
 
     # open the database, creating it if necessary, and make sure up to date with latest migrations
     @connection = ActiveRecordConnection.new(logger, load_config(DB_CONFIG_FILE)[ENV["ADAPTER_ENV"]])
@@ -92,18 +99,16 @@ class AdapterSync
     @clearinghouse = ApiClient.new(apiconfig)
     
     # create ExportProcessor and ImportProcessor instances
-    require File.join(PROCESSORS_DIR, options[:processors][:export_processor]) if options[:processors].try(:[], :export_processor).present?
-    require File.join(PROCESSORS_DIR, options[:processors][:import_processor]) if options[:processors].try(:[], :import_processor).present?
-    @export_processor = ExportProcessor.new
-    @import_processor = ImportProcessor.new
+    require File.join(PROCESSORS_DIR, options[:export][:processor]) if options[:export].try(:[], :processor).present?
+    require File.join(PROCESSORS_DIR, options[:import][:processor]) if options[:import].try(:[], :processor).present?
+    @export_processor = ExportProcessor.new(@logger, options[:export].try(:[], :options))
+    @import_processor = ImportProcessor.new(@logger, options[:import].try(:[], :options))
   end
 
   def poll
-    errors = []
-    trip_updates, claim_updates, comment_updates, result_updates = [[], [], [], []]
+    @errors, @updated_trips = [[], []]
     replicate_clearinghouse
-    export_changes
-    report_sync_errors
+    export_tickets
     import_tickets
   rescue Exception => e
     logger.error e.message + "\n" + e.backtrace.join("\n")
@@ -112,44 +117,26 @@ class AdapterSync
 
   def replicate_clearinghouse
     last_updated_at = most_recent_tracked_update_time
-    updated_trips = get_updated_clearinghouse_trips(last_updated_at)
-    logger.debug "Retrieved #{updated_trips.length} updated trips from API"
-    updated_trips.each {|trip| process_updated_clearinghouse_trip(trip.data) }
+    trips = get_updated_clearinghouse_trips(last_updated_at)
+    logger.info "Retrieved #{trips.length} updated trips from API"
+    @updated_trips = trips.collect{|trip|
+      trip_data = trip.data.deep_dup
+      process_updated_clearinghouse_trip(trip_data)
+    }.compact
+    report_errors "syncing with the Ride Clearinghouse", @errors
   end
 
-  def export_changes
-    return unless options[:export][:enabled]
-    export_dir = options[:export][:export_folder]
-    raise "Export folder not configured, will not export new changes detected on the Clearinghouse" if export_dir.blank?
-    raise "Export folder #{export_dir} does not exist" if Dir[export_dir].empty?
-
-    # flatten nested structures in the updated trips
-    flattened_trips, flattened_claims, flattened_comments, flattened_results = [[], [], [], []]
-    trip_updates.each { |x| flattened_trips << flatten_hash(x) }
-    claim_updates.each { |x| flattened_claims << flatten_hash(x) }
-    comment_updates.each { |x| flattened_comments << flatten_hash(x) }
-    result_updates.each { |x| flattened_results << flatten_hash(x) }
-
-    # create combined lists of keys since each change set can include different updated columns
-    trip_keys, claim_keys, comment_keys, result_keys = [[], [], [], []]
-    flattened_trips.each { |x| trip_keys |= x.stringify_keys.keys }
-    flattened_claims.each { |x| claim_keys |= x.stringify_keys.keys }
-    flattened_comments.each { |x| comment_keys |= x.stringify_keys.keys }
-    flattened_results.each { |x| result_keys |= x.stringify_keys.keys }
-
-    # create file names for exports
-    timestamp = timestamp_string
-    trip_file = File.join(export_dir, "trip_tickets.#{timestamp}.csv")
-    claim_file = File.join(export_dir, "trip_claims.#{timestamp}.csv")
-    comment_file = File.join(export_dir, "trip_ticket_comments.#{timestamp}.csv")
-    result_file = File.join(export_dir, "trip_results.#{timestamp}.csv")
-
-    export_csv(trip_file, trip_keys, flattened_trips)
-    export_csv(claim_file, claim_keys, flattened_claims)
-    export_csv(comment_file, comment_keys, flattened_comments)
-    export_csv(result_file, result_keys, flattened_results)
+  def export_tickets
+    export_processor.process(@updated_trips) if options[:export][:enabled]
+    report_errors "processing the exported trip tickets", export_processor.errors
   end
 
+  # TODO - refactor to use ImportProcessor. It should start by calling 
+  # import_processor.process with no arguments (the ImportProcessor)
+  # class is responsible for aquring the import data, by reading flat
+  # files, or reading from the DB directly, etc.). It should return 
+  # an array of trip ticket attribute hashes (JSON-style) to post to
+  # the CH API
   def import_tickets
     return unless options[:import][:enabled]
     import_dir = options[:import][:import_folder]
@@ -223,43 +210,17 @@ class AdapterSync
 
   protected
 
+  # TODO - refactor into ExportProcessor
   def timestamp_string
     Time.zone.now.strftime("%Y-%m-%d.%H%M%S")
-  end
-
-  def export_csv(filename, headers, data)
-    if data.present?
-      CSV.open(filename, 'wb', headers: headers, write_headers: true) do |csv|
-        data.each {|result| csv << headers.map { |key| result[key] }}
-      end
-    end
-  end
-
-  # flatten hash structure, changing keys of nested objects to parentkey_nestedkey
-  # arrays of sub-objects will be ignored
-  def flatten_hash(hash, prepend_name = nil)
-    new_hash = {}
-    hash.each do |key, value|
-      new_key = [prepend_name, key.to_s].compact.join('_')
-      case value
-        when Hash
-          new_hash.merge!(flatten_hash(value, new_key))
-        when Array
-          hash_array = value.index{|x| x.is_a?(Hash) }.present?
-          new_hash[new_key] = value unless hash_array
-        else
-          new_hash[new_key] = value
-      end
-    end
-    new_hash
   end
 
   def most_recent_tracked_update_time
     TripTicket.maximum('ch_updated_at').try(:utc)
   end
 
-  # Query CH for all trips/results/claims updated after that time where our provider is originator or a claimant
-
+  # Query CH for all trips/results/claims updated after that time where
+  # our provider is originator or a claimant
   def get_updated_clearinghouse_trips(since_time)
     time_str = since_time.presence && (since_time.is_a?(String) ? since_time : since_time.strftime('%Y-%m-%d %H:%M:%S.%6N'))
     begin
@@ -269,55 +230,60 @@ class AdapterSync
     end
   end
 
+  # Mark the trip and any known sub nodes as new or modified, then save
+  # the trip_hash to the database
   def process_updated_clearinghouse_trip(trip_hash)
-    if trip_hash[:id].nil?
-      errors << "A trip ticket from the Clearinghouse was missing its ID"
+    # Don't bother with converting the hash to indifferent access, we
+    # can just check for the ID key as both a symbol and a string
+    if trip_hash[:id].nil? && trip_hash["id"].nil?
+      @errors << "A trip ticket from the Clearinghouse was missing its ID. It will not be exported."
       return
     end
+    
+    # Ensure association hashes exist, even if empty
+    trip_hash[:trip_claims]          ||= []
+    trip_hash[:trip_ticket_comments] ||= []
+    trip_hash[:trip_result]          ||= {}
 
+    # Look up any existing trip data
     adapter_trip = TripTicket.find_by_ch_id(trip_hash[:id])
 
     if adapter_trip.nil?
-      # duplicate the trip_hash for export (original hash will be saved in the database), and run it through any export_processing
-      trip = trip_hash.dup # export_processor.process_trip_hash(trip_hash.dup)
-
-      # pluck the modifications to claims, comments, and results out of the trip to report them separately
-      claims = trip.delete(:trip_claims)
-      comments = trip.delete(:trip_ticket_comments)
-      result = trip.delete(:trip_result)
-
-      # save results for export
-      trip_updates << { update_type: 'new_record' }.merge(trip) unless trip.blank?
-      result_updates << { update_type: 'new_record' }.merge(result) if result.present?
-      claims.each { |c| claim_updates << { update_type: 'new_record' }.merge(c) if c.present? }
-      comments.each { |c| comment_updates << { update_type: 'new_record' }.merge(c) if c.present? }
-
       # save new trip in local database
       TripTicket.new.map_attributes(trip_hash).save!
+
+      # mark the ticket and each associated object as a new record
+      trip_hash[:trip_claims].map! {|claim| claim.merge!({new_record: true})}
+      trip_hash[:trip_ticket_comments].map! {|comment| comment.merge!({new_record: true})}
+      trip_hash[:trip_result].merge!({new_record: true}) unless trip_hash[:trip_result].blank?
+      trip_hash.merge!({new_record: true})
     else
-      # collect a hash of changed attributes since the last sync
-      trip_diff = hash_diff(adapter_trip.ch_data_hash, trip_hash).with_indifferent_access
+      # save a copy of the current data hash to use for comparison
+      original_ch_data_hash = adapter_trip.ch_data_hash.deep_dup
       
-      # pluck the modifications to claims, comments, and results out of the trip to report them separately
-      claims = trip_diff.delete(:trip_claims) || []
-      comments = trip_diff.delete(:trip_ticket_comments) || []
-      result = trip_diff.delete(:trip_result) || []
-
-      # save results for export
-      # make sure the trip_diff with the claims, comments, and results removed is not blank or just an ID
-      clean_trip_diff = clean_diff(trip_diff)
-      unless clean_trip_diff.blank? || clean_trip_diff.keys == ['id']
-        trip_updates << { update_type: 'modified' }.merge(clean_trip_diff)
-      end
-      claims.each { |claim_diff| record_changes(claim_diff, claim_updates) }
-      comments.each { |comment_diff| record_changes(comment_diff, comment_updates) }
-      record_changes(result, result_updates) if result.present?
-
       # save updated trip in local database
       adapter_trip.map_attributes(trip_hash).save!
+
+      # mark new associated records as necessary, mark the trip as not
+      # new
+      mark_new_associations!(trip_hash[:trip_claims], original_ch_data_hash[:trip_claims] || [])
+      mark_new_associations!(trip_hash[:trip_ticket_comments], original_ch_data_hash[:trip_ticket_comments] || [])
+      trip_hash[:trip_result].merge!({new_record: original_ch_data_hash[:trip_result].blank?}) unless trip_hash[:trip_result].blank?
+      trip_hash.merge!({new_record: false})
+    end
+    
+    trip_hash
+  end
+  
+  def mark_new_associations!(association_hashes, existing_hashes)
+    existing_ids = existing_hashes.collect{|o| (o.try(:[], :id) || o.try(:[], "id")).to_i}
+    association_hashes.map! do |association_hash|
+      association_id = (association_hash.try(:[], :id) || association_hash.try(:[], "id")).to_i
+      association_hash.merge!({new_record: !existing_ids.include?(association_id)})
     end
   end
 
+  # TODO - refactor to ImportProcessor?
   def handle_nested_objects!(row)
     # support nested values for :customer_address, :pick_up_location, :drop_off_location, :trip_result
     # these can be included in the CSV file with the object name prepended, e.g. 'trip_result_outcome'
@@ -339,6 +305,7 @@ class AdapterSync
     row['trip_result_attributes'] = trip_result_hash if trip_result_hash.present?
   end
 
+  # TODO - refactor to ImportProcessor?
   def nested_object_to_hash(row, prefix)
     new_hash = {}
     row.select do |k, v|
@@ -350,6 +317,7 @@ class AdapterSync
     new_hash
   end
 
+  # TODO - refactor to ImportProcessor?
   # normalize accepted location coordinate formats to WKT
   # accepted:
   # location_hash['lat'] and location_hash['lon']
@@ -369,8 +337,10 @@ class AdapterSync
     location_hash['position'] = new_position if new_position
   end
 
+  # TODO - refactor to ImportProcessor?
   def handle_date_conversions!(row)
-    # assume any date entered as ##/##/#### is mm/dd/yyyy, convert to dd/mm/yyyy the way Ruby prefers
+    # assume any date entered as ##/##/#### is mm/dd/yyyy, convert to
+    # dd/mm/yyyy the way Ruby prefers
     changed = false
     row.each do |k,v|
       parts = k.rpartition('_')
@@ -414,17 +384,16 @@ class AdapterSync
     (YAML::load(File.open(file)) || {}).with_indifferent_access
   end
 
-  def report_sync_errors
+  def report_errors(error_message, errors)
     unless errors.blank?
-      msg = "Encountered #{errors.length} errors while syncing with the Ride Clearinghouse:\n" << errors.join("\n")
+      msg = "Encountered #{errors.length} errors while #{error_message}:\n" << errors.join("\n")
       begin
-        AdapterNotification.new(error: msg).send
+        AdapterNotification.new(error: error_message).send
       rescue Exception => e
         logger.error "Error notification failed, could not send email: #{e}"
       end
     end
   end
-
 end
 
 if __FILE__ == $0

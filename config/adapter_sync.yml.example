@@ -1,12 +1,12 @@
 import:
   enabled: true
-  import_folder: tmp/import
-  completed_folder: tmp/import_done
+  processor: processors/import_processor.rb
+  options: 
+    import_folder: tmp/import
+    completed_folder: tmp/import_done
 
 export:
   enabled: true
-  export_folder: tmp/export
-
-processors:
-  pre_processor: processors/pre_processor.rb
-  post_processor: processors/post_processor.rb
+  processor: processors/export_processor.rb
+  options: 
+    export_folder: tmp/export
