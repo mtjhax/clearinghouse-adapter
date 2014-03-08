@@ -261,23 +261,18 @@ class ImportProcessor < Processor::Import::Base
   end
     
   def setup_import_database
-    database_options = {
-      adapter: "sqlite3",
-      database: "db/basic_import_processor_#{ENV["ADAPTER_ENV"] || development}.sqlite3",
-      pool: 5,
-      timeout: 5000
-    }
-    
-    ImportedFile.establish_connection database_options
     ImportedFile.logger = logger
-        
-    # setup the default ActiveRecord::Base.connection if one doesn't 
-    # exist already. For instance, if this class is included from
-    # AdapterSync, there will already be a default database connection.
-    # If we are running it on it's own then no default will exist yet.
-    # This is necessary for the migrations to work properly
-    ActiveRecordConnection.new(logger, database_options) unless ActiveRecord::Base.connected?
     
+    old_spec = nil
+    if ActiveRecord::Base.connected?
+      old_spec = ActiveRecord::Base.connection.instance_variable_get(:@config)
+    end
+    
+    ActiveRecord::Base.establish_connection ImportedFile::CONNECTION_SPEC
     ActiveRecord::Migrator.migrate(File.join(File.expand_path(File.dirname(__FILE__)), 'basic_import_processor', 'migrations'))
+    
+    if old_spec.present?
+      ActiveRecord::Base.establish_connection old_spec
+    end
   end
 end

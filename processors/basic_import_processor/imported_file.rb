@@ -13,6 +13,15 @@
 # limitations under the License.
 
 class ImportedFile < ActiveRecord::Base
+  CONNECTION_SPEC = {
+    adapter: "sqlite3",
+    database: "db/basic_import_processor_#{ENV["ADAPTER_ENV"] || development}.sqlite3",
+    pool: 5,
+    timeout: 5000
+  }
+  
+  self.establish_connection CONNECTION_SPEC
+  
   #string   :file_name
   #integer  :size
   #datetime :modified

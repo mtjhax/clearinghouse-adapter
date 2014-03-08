@@ -28,9 +28,7 @@ describe ImportProcessor do
     @options = { import_folder: @input_folder, completed_folder: @output_folder }
     @import_processor = ImportProcessor.new(nil, @options)
 
-    # TODO will this work with the alternate database connection?
-    # If not, just use ImportedFile.destroy_all in the `after` block.
-    DatabaseCleaner.clean_with(:truncation)
+    DatabaseCleaner[:active_record, {model: ImportedFile}].clean_with(:truncation)
   end
 
   after do
