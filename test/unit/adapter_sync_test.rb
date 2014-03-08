@@ -236,31 +236,6 @@ describe AdapterSync do
       @adapter.import_tickets
     end
   
-    it "marks rows as errors if they do not contain an origin_trip_id" do
-      skip
-      # TODO
-      attrs = @minimum_trip_attributes.tap {|h| h.delete(:origin_trip_id) }
-      file = create_csv(@input_folder, 'test4.csv', attrs.keys, [attrs.values])
-      @adapter.import_tickets
-      ImportedFile.count.must_equal 1
-      imported_file = ImportedFile.first
-      imported_file.file_name.must_equal file
-      imported_file.rows.must_equal 1
-      imported_file.row_errors.must_equal 1
-    end
-
-    it "marks rows as errors if they cannot be sent to the Clearinghouse API" do
-      skip
-      # TODO
-      create_csv(@input_folder, 'test5.csv', @minimum_trip_attributes.keys, [@minimum_trip_attributes.values])
-      ApiClient.any_instance.stubs(:post).raises(RuntimeError, "This row blew up the API")
-      @adapter.import_tickets
-      ImportedFile.count.must_equal 1
-      imported_file = ImportedFile.first
-      imported_file.rows.must_equal 1
-      imported_file.row_errors.must_equal 1
-    end
-
     it "sends new trips to the Clearinghouse API with POST" do
       stub_result = ApiClient.new.tap {|result| result[:id] = 1379 }
       ApiClient.any_instance.expects(:post).once.returns(stub_result)
