@@ -12,17 +12,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-class ActiveRecordConnection
-  attr_accessor :options
-
-  def initialize(logger, options = {})
-    @options = options || {}
-    ActiveRecord::Base.default_timezone = :utc
-    ActiveRecord::Base.logger = logger
-    ActiveRecord::Base.establish_connection @options
-  end
-
-  def migrate(migrations_dir, version = nil)
-    ActiveRecord::Migrator.migrate migrations_dir, version ? version.to_i : nil
-  end
+class ImportedFile < ActiveRecord::Base
+  #string   :file_name
+  #integer  :size
+  #datetime :modified
+  #integer  :rows
+  #integer  :row_errors
+  #boolean  :error
+  #string   :error_msg
+  #datetime :created_at
 end

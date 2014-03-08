@@ -14,17 +14,6 @@
 
 class CreateAdapterTables < ActiveRecord::Migration
   def change
-    create_table :imported_files do |t|
-      t.string :file_name
-      t.integer :size
-      t.datetime :modified
-      t.integer :rows
-      t.integer :row_errors
-      t.boolean :error
-      t.string :error_msg
-      t.datetime :created_at
-    end
-
     create_table :trip_tickets do |t|
       t.integer :ch_id                  # matching ID on the Clearinghouse
       t.datetime :ch_updated_at         # to track the latest change we have seen

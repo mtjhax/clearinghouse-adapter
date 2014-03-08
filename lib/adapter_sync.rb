@@ -32,11 +32,8 @@ require 'adapter_monitor_notification'
 require 'export_processor'
 require 'import_processor'
 
-# TODO remove after refactoring
+# TODO
 require 'debugger'
-
-# TODO refactor this into the ImportProcessor class
-require 'import'
 
 model_dir = File.join(File.dirname(__FILE__), 'model')
 $LOAD_PATH.unshift(model_dir)
@@ -60,10 +57,10 @@ TASK Refactor Adapter change comparison and what pre-/post-processors are used f
 TODO ~Remove HashDiff library since it won't be used anymore~
 TODO ~Remove code that diffs data being exported to API~
 TODO ~Remove code that diffs data being imported from API~
-TODO Create new ExportProcessorBase class. It should accept API data as a parsed JSON array, perform any data massaging necessary (the base class may not need to do this, but allow it to be done for sub classes), and it should finish by dumping the data to a flat CSV file (one per object type). Ensure that hstore and array fields are represented as proper columns: one column for each value for arrays; one column each for every key and value for hstores
+TODO ~Create new ExportProcessorBase class. It should accept API data as a parsed JSON array, perform any data massaging necessary (the base class may not need to do this, but allow it to be done for sub classes), and it should finish by dumping the data to a flat CSV file (one per object type). Ensure that hstore and array fields are represented as proper columns: one column for each value for arrays; one column each for every key and value for hstores~
 TODO Create new ImportProcessorBase class. It should pick up flat CSV files in the same format as how the ImportProcessorBase class writes them, perform any data massaging necessary (the base class may not need to do this, but allow it to be done for sub classes), and finish by POSTing the data to the proper API endpoint.
-TODO Move export_csv to ExportProcessorBase class
-TODO Simplify sync process - poll API for incoming updates, call export processor, call import processor, send outgoing updates to API
+TODO ~Move export_csv to ExportProcessorBase class~
+TODO ~Simplify sync process - poll API for incoming updates, call export processor, call import processor, send outgoing updates to API~
 TODO Remove the imported_file migration and refactor that into the ImportProcessor class. 
 TODO Alternately, refactor the import table to just track generic strings that the ImportProcessor can poll - upside: convenient, downside: requires Processor class have implementation knowledge about AdapterSync
 TODO Add OS license blurb to new files
@@ -76,7 +73,6 @@ class AdapterSync
   API_CONFIG_FILE = File.join(BASE_DIR, 'config', 'api.yml')
   DB_CONFIG_FILE  = File.join(BASE_DIR, 'config', 'database.yml')
   MIGRATIONS_DIR  = File.join(BASE_DIR, 'db', 'migrations')
-  PROCESSORS_DIR  = File.join(BASE_DIR, 'processors')
 
   attr_accessor :options, :logger, :errors, :exported_trips, 
     :imported_trips, :export_processor, :import_processor
@@ -97,8 +93,8 @@ class AdapterSync
     @clearinghouse = ApiClient.new(apiconfig)
     
     # create ExportProcessor and ImportProcessor instances
-    require File.join(PROCESSORS_DIR, options[:export][:processor]) if options[:export].try(:[], :processor).present?
-    require File.join(PROCESSORS_DIR, options[:import][:processor]) if options[:import].try(:[], :processor).present?
+    require File.join(BASE_DIR, options[:export][:processor]) if options[:export].try(:[], :processor).present?
+    require File.join(BASE_DIR, options[:import][:processor]) if options[:import].try(:[], :processor).present?
     @export_processor = ExportProcessor.new(@logger, options[:export].try(:[], :options))
     @import_processor = ImportProcessor.new(@logger, options[:import].try(:[], :options))
   end

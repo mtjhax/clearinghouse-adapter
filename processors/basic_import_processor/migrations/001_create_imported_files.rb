@@ -12,13 +12,21 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-class ImportedFile < ActiveRecord::Base
-  #string   :file_name
-  #integer  :size
-  #datetime :modified
-  #integer  :rows
-  #integer  :row_errors
-  #boolean  :error
-  #string   :error_msg
-  #datetime :created_at
+class CreateImportedFiles < ActiveRecord::Migration
+  def connection
+    ImportedFile.connection
+  end
+  
+  def change
+    create_table :imported_files do |t|
+      t.string :file_name
+      t.integer :size
+      t.datetime :modified
+      t.integer :rows
+      t.integer :row_errors
+      t.boolean :error
+      t.string :error_msg
+      t.datetime :created_at
+    end
+  end
 end

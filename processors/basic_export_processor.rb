@@ -1,8 +1,23 @@
-require 'export_processor'
+# Copyright 2013 Ride Connection
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
 require 'active_support/core_ext/object'
 require 'active_support/core_ext/hash'
 require 'active_support/time_with_zone'
 require 'csv'
+require 'export_processor'
+require 'fileutils'
 
 # This is working example of an extended ExportProcessor class. To use
 # this as the ExportProcessor in your adapter installation, simply 
@@ -32,7 +47,7 @@ require 'csv'
 # your custom processor may need. For instance, in this processor we
 # need to specify a folder where the exported files should be saved. 
 # Any options you'd like to make available to an instance of the  
-# ExportProcessor can specified in the config/adapter_sync.yml file
+# ExportProcessor can be specified in the config/adapter_sync.yml file
 # under the export[:options] area. You can specify as many options
 # as you need for your specific implementation.
 
@@ -41,7 +56,7 @@ require 'csv'
 # you can write log messages to for debugging or informational
 # purposes. The @errors variable is an array (initially empty), which
 # you can assign any error messages that you would like to be sent to
-# system admins when #process is called as part of the AdapterSync
+# system admins after #process is called as part of the AdapterSync
 # process.
 
 Time.zone = "UTC"

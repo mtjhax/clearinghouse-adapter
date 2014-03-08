@@ -1,41 +1,32 @@
+# Copyright 2013 Ride Connection
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
 require 'logger'
 
 module Processor
   module Export
     class Base
-      BASE_DIR = File.expand_path('..', File.dirname(__FILE__))
-
       attr_accessor :logger, :options, :errors
       
       def initialize(logger = nil, options = {})
-        @logger = logger || Logger.new(STDOUT)
+        @logger = logger || Logger.new('/dev/null')
         @options = options
         @errors = []
       end
   
       def process(data)
         raise "You must impliment this method in your ExportProcessor class"
-      end
-      
-      private
-      
-      # normalize accepted location coordinate formats to WKT
-      # formats accepted:
-      #   location_hash['lat'] and location_hash['lon']
-      #   location_hash['position'] = "lon lat" (punctuation ignored except dash, e.g. lon:lat, lon,lat, etc.)
-      #   location_hash['position'] = "POINT(lon lat)"
-      def normalize_location_coordinates(location_hash)
-        lat = location_hash.delete('lat')
-        lon = location_hash.delete('lon')
-        position = location_hash.delete('position')
-        new_position = position
-        if lon.present? && lat.present?
-          new_position = "POINT(#{lon} #{lat})"
-        elsif position.present?
-          match = position.match(/^\s*([\d\.\-]+)[^\d-]+([\d\.\-]+)\s*$/)
-          new_position = "POINT(#{match[1]} #{match[2]})" if match
-        end
-        location_hash['position'] = new_position if new_position
       end
     end
   end

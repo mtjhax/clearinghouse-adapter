@@ -16,6 +16,8 @@ require 'minitest/autorun'
 require 'fileutils'
 require 'csv'
 
+# TODO clean up this module after refactoring, removing extraneous methods
+
 module FileHelpers
   def create_csv(folder, file_name, headers = [], data = [])
     file_name = File.join(File.expand_path(folder), file_name)
