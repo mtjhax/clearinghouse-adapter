@@ -1,5 +1,0 @@
-origin_trip_id,appointment_time,requested_pickup_time,requested_drop_off_time,origin_customer_id,customer_first_name,customer_last_name,customer_dob,customer_primary_phone,customer_seats_required,customer_information_withheld,scheduling_priority,customer_mobility_factors,customer_identifiers
-6656,2013-07-21,8:54,3:24,6066,Gloria,Stevens,2001-06-26,884-408-7364,23,false,pickup,,
-9610,2013-08-16,9:17,12:15,1798,Philip,Carroll,2005-11-16,029-537-8784,31,false,pickup,"{""a_customer_mobility_factors"",""b_customer_mobility_factors""}","""a_customer_identifiers""=>""b_customer_identifiers"",""c_customer_identifiers""=>""d_customer_identifiers"""
-4057,2013-10-06,14:23,5:43,6149,Teresa,Jones,2007-07-04,166-366-3621,16,true,pickup,,"""a_customer_identifiers""=>""b_customer_identifiers"",""c_customer_identifiers""=>""d_customer_identifiers"""
-1880,2013-04-26,19:57,20:59,4717,Antonio,Vasquez,1994-07-04,825-520-4849,57,true,dropoff,"{""a_customer_mobility_factors"",""b_customer_mobility_factors""}",
