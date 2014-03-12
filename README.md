@@ -193,33 +193,6 @@ cd c:\adapter
 c:\adapter\bin\remove_adapter_service
 ```
 
-## Import Test
-
-TODO move to Import Processor section
-
-The file `c:\adapter\test\csv\sample_tickets.csv` contains four sample
-tickets that can be imported to make sure the Adapter is working
-properly. To test, simply copy this file into `c:\adapter\tmp\import`.
-Within a minute, the Adapter should attempt to import the file and log
-its results in `c:\adapter\tmp\import_done\import.log` (this
-directory may be changed – configuration detailed below). If there is an
-error, an email notification should be sent assuming email notifications
-are properly configured.
-
-The import test will cause four fictitious trips to be posted on the
-Clearinghouse – these can be checked by logging into the web site. There
-should be one each for customers:
-
--   Gloria Stevens
--   Philip Carroll
--   Teresa Jones
--   Antonio Vasquez
-
-These should be rescinded (cancelled) as soon as possible so claimants
-do not think they are real trips. To rescind a trip, click the customer
-name in the right-hand panel to see the full trip details, then find the 
-Rescind action in the left panel.
-
 # Operations
 
 ## Starting / Stopping the Windows Service
