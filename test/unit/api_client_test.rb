@@ -15,6 +15,8 @@
 require 'test_helper'
 require 'api_client'
 
+# TODO retest this against a locally running instance of the API
+
 describe ApiClient do
 
   # the following values can be changed to match available data if a new VCR cassette needs to be recorded:

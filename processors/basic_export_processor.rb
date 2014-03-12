@@ -24,16 +24,6 @@ require 'fileutils'
 # update the config/adapter_sync.yml file by specifying the path to this
 # file as the export[:processor] value.
 
-# All ExportProcessor instances must impliment a public #process
-# method. This method must always accept one argument: an array of trip
-# attribute hashes (including nested association attributes). It should
-# not return any value. What the method does with the data is dependent
-# on the local system and can be customized as neecessary. Some
-# examples of what a custom ExportProcessor might do would be to massage
-# clearinghouse data into a format that is better suited for the local
-# transportation software, or interacting directly with a database
-# as opposed to writing to a file.
-
 # In this example, the #process method will write out the exported trip
 # data to CSV files: one each for trip tickets, trip claims, trip
 # comments and trip results. The data will remain largely unchanged,
@@ -41,23 +31,9 @@ require 'fileutils'
 # individual columns, and any associated address attributes will be
 # added as columns on the trip record.
 
-# The Processor::Export::Base class that your ExportProcessor will 
-# inherit from includes an initializer which should not be overwritten.
-# This initializer is already configured to accept any options that
-# your custom processor may need. For instance, in this processor we
-# need to specify a folder where the exported files should be saved. 
-# Any options you'd like to make available to an instance of the  
-# ExportProcessor can be specified in the config/adapter_sync.yml file
-# under the export[:options] area. You can specify as many options
-# as you need for your specific implementation.
-
-# The initializer also instantiates the @logger and @errors instance
-# variables. The @logger variable will be a standard logger object that
-# you can write log messages to for debugging or informational
-# purposes. The @errors variable is an array (initially empty), which
-# you can assign any error messages that you would like to be sent to
-# system admins after #process is called as part of the AdapterSync
-# process.
+# This processor requires a single configuration options, 
+# `export_folder`, which is a path (relative to the project root) where
+# the CSV files will be saved.
 
 Time.zone = "UTC"
 
@@ -77,9 +53,6 @@ class ExportProcessor < Processor::Export::Base
       comments = trip_data.delete(:trip_ticket_comments) || []
       result = trip_data.delete(:trip_result) || {}
 
-      # TODO handle any remaining nested objects, such as address
-      # fields, array attributes, and hstore attributes
-      
       # save results for export
       # make sure the trip_data with the claims, comments, and
       # results removed is not blank or just an ID

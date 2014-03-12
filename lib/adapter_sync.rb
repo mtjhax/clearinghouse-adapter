@@ -32,39 +32,25 @@ require 'adapter_monitor_notification'
 require 'export_processor'
 require 'import_processor'
 
-# TODO
-require 'debugger'
-
 model_dir = File.join(File.dirname(__FILE__), 'model')
 $LOAD_PATH.unshift(model_dir)
 Dir[File.join(model_dir, "*.rb")].each {|file| require File.basename(file, '.rb') }
 
 Time.zone = "UTC"
 
-# This code should use exit(1) or raise an exception for errors that should be considered a service "outage"
+# This code should use exit(1) or raise an exception for errors that 
+# should be considered a service "outage"
 #
 # Service outages should include things such as:
 # - Import folders not configured, resulting in no work being done
 # - Failure to connect to the Clearinghouse API
 # - Any unforeseen exception
 #
-# Normal operating errors such as an invalid import file or a row that generates an API error should
-# be logged and optionally cause a notification, but don't really constitute an "outage" (although it
-# would be nice if the user could configure what to consider a failure vs. a normal error).
-
-=begin
-TASK Refactor Adapter change comparison and what pre-/post-processors are used for
-TODO ~Remove HashDiff library since it won't be used anymore~
-TODO ~Remove code that diffs data being exported to API~
-TODO ~Remove code that diffs data being imported from API~
-TODO ~Create new ExportProcessorBase class. It should accept API data as a parsed JSON array, perform any data massaging necessary (the base class may not need to do this, but allow it to be done for sub classes), and it should finish by dumping the data to a flat CSV file (one per object type). Ensure that hstore and array fields are represented as proper columns: one column for each value for arrays; one column each for every key and value for hstores~
-TODO Create new ImportProcessorBase class. It should pick up flat CSV files in the same format as how the ImportProcessorBase class writes them, perform any data massaging necessary (the base class may not need to do this, but allow it to be done for sub classes), and finish by POSTing the data to the proper API endpoint.
-TODO ~Move export_csv to ExportProcessorBase class~
-TODO ~Simplify sync process - poll API for incoming updates, call export processor, call import processor, send outgoing updates to API~
-TODO Remove the imported_file migration and refactor that into the ImportProcessor class. 
-TODO Alternately, refactor the import table to just track generic strings that the ImportProcessor can poll - upside: convenient, downside: requires Processor class have implementation knowledge about AdapterSync
-TODO Add OS license blurb to new files
-=end
+# Normal operating errors such as an invalid import file or a row that
+# generates an API error should be logged and optionally cause a 
+# notification, but don't really constitute an "outage" (although it
+# would be nice if the user could configure what to consider a failure 
+# vs. a normal error).
 
 class AdapterSync
   BASE_DIR        = File.expand_path('..', File.dirname(__FILE__))
@@ -83,7 +69,8 @@ class AdapterSync
 
     @errors, @exported_trips, @imported_trips = [[], [], []]
 
-    # open the database, creating it if necessary, and make sure up to date with latest migrations
+    # open the database, creating it if necessary, and make sure up to 
+    # date with latest migrations
     @connection = ActiveRecordConnection.new(logger, load_config(DB_CONFIG_FILE)[ENV["ADAPTER_ENV"]])
     @connection.migrate(MIGRATIONS_DIR)
 
@@ -100,11 +87,9 @@ class AdapterSync
   end
 
   def poll
-    @errors, @exported_trips, @imported_trips = [[], [], []]
+    @exported_trips, @imported_trips = [[], []]
     replicate_clearinghouse
-    @errors = []
     export_tickets
-    @errors = []
     import_tickets
   rescue Exception => e
     logger.error e.message + "\n" + e.backtrace.join("\n")
@@ -112,6 +97,7 @@ class AdapterSync
   end
 
   def replicate_clearinghouse
+    @errors = []
     last_updated_at = most_recent_tracked_update_time
     trips = get_updated_clearinghouse_trips(last_updated_at)
     logger.info "Retrieved #{trips.length} updated trips from API"
@@ -123,12 +109,14 @@ class AdapterSync
   end
 
   def export_tickets
+    @errors = []
     return unless options[:export][:enabled]
     export_processor.process(@exported_trips)
     report_errors "processing the exported trip tickets", export_processor.errors
   end
 
   def import_tickets
+    @errors = []
     return unless options[:import][:enabled]
     @imported_trips = import_processor.process
     

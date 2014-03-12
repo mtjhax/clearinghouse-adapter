@@ -22,64 +22,22 @@ require_relative 'basic_import_processor/imported_file'
 require 'import_processor'
 require 'sqlite3'
 
-# TODO
-require 'debugger'
-
 # This is working example of an extended ImportProcessor class. To use
 # this as the ImportProcessor in your adapter installation, simply 
 # update the config/adapter_sync.yml file by specifying the path to this
 # file as the import[:processor] value.
 
-# All ImportProcessor instances must impliment two public methods: 
-# #process and #finalize
-
-# The #public method accepts no arguments. It should return an array of 
-# hashes, each one representing all of the attributes for a trip ticket
-# that the CH API would expect, and in the proper format. This does 
-# require some knowledge of the structure of a trip ticket and it's 
-# associated objects, so be sure you're comfortable with that before you
-# make any changes. Where the data originates from and what sort of
-# transformations you perofm on it is dependent on the local system and
-# can be customized as neecessary. Some examples of what a custom
-# ImportProcessor might do would be to massage data from the local
-# transportation system into a format that is better suited for the
-# clearinghouse API, or to pick up data directly from a database as
-# opposed to reading from a file.
-
 # In this example, the #process method will pick up CSV files from a
 # directory, parse the contents, and finally format it to better 
-# represent trip ticket data.
+# represent trip ticket data. We will use the #finalize method to move
+# processed files to a different directory, and to record the names of 
+# the files we processed so that we don't accidentally process them 
+# again later.
 
-# The #finalize method accepts three arguments: imported_rows, 
-# skipped_rows, and unposted_rows. Each of these is an array containing
-# zero or more trip hashes. (The same hashes that were reterned by
-# the #process method) The method should not return any value. While it
-# is required that you define this method in your ImportProcessor
-# class, it is not required that it actually do any thing. It is 
-# provided as an optional end point for performing cleanup, reporting, 
-# maintenance, etc. 
-
-# In this example, we will use the #finalize method to move processed 
-# files to a different directory, and to record the names of the files
-# we processed so that we don't accidentally process them again later.
-
-# The Processor::Import::Base class that your ImportProcessor will 
-# inherit from includes an initializer which should not be overwritten.
-# This initializer is already configured to accept any options that
-# your custom processor may need. For instance, in this processor we
-# need to specify the folders where our CSV files will be processed 
-# from. Any options you'd like to make available to an instance of the  
-# ExportProcessor can be specified in the config/adapter_sync.yml file
-# under the import[:options] area. You can specify as many options
-# as you need for your specific implementation.
-
-# The initializer also instantiates the @logger and @errors instance
-# variables. The @logger variable will be a standard logger object that
-# you can write log messages to for debugging or informational
-# purposes. The @errors variable is an array (initially empty), which
-# you can assign any error messages that you would like to be sent to
-# system admins after #process is called as part of the AdapterSync
-# process.
+# This processor requires a two configuration options: 
+# `import_folder`, which is a path (relative to the project root) where
+# the CSV files will be read from, and `completed_folder`, which is a
+# path to where the processed files will be moved to.
 
 Time.zone = "UTC"
 

@@ -113,14 +113,41 @@ Your bundle is complete!
 
 ## Configuration
 
-Locate and edit the file `c:\adapter\config\api.yml` with a text editor
-(e.g. Wordpad.exe or Notepad.exe)
+All of the configuration scripts are located in the `config` folder. If
+this is your first time installing the service, simply copy all of the
+`.example` files to begin with. For instance, open the
+`c:\adapter\config\api.yml.example` file and resave it as 
+`c:\adapter\config\api.yml`.
+
+### adapter_sync.yml
+
+Locate and edit the file `c:\adapter\config\adapter_sync.yml` with a 
+text editor (e.g. Wordpad.exe or Notepad.exe)
+
+-   This file enables importing and exporting of trip ticket 
+    information. 
+-   If you enable either option, you will also need to
+    specify the path to a processor script. See the Processor section
+    below for more information.
+-   Some processors require additional options to be configured, which
+    can also be specified here. See below for more information.
+
+### api.yml
+
+Locate and edit the file `c:\adapter\config\api.yml`
 
 -   Find each instance of `api_key:` and replace the value that follows
     on the same line with your actual *Public API Key*.
 -   Find each instance of `api_private_key:` and replace the value that
     follows on the same line with your actual *Private API Key*.
 -   Save and close the file.
+
+### database.yml
+
+The default configuration for this file should be sufficient for most
+instalations.
+
+### mail.yml
 
 Locate and edit the file `c:\adapter\config\mail.yml`
 
@@ -166,6 +193,33 @@ cd c:\adapter
 c:\adapter\bin\remove_adapter_service
 ```
 
+## Import Test
+
+TODO move to Import Processor section
+
+The file `c:\adapter\test\csv\sample_tickets.csv` contains four sample
+tickets that can be imported to make sure the Adapter is working
+properly. To test, simply copy this file into `c:\adapter\tmp\import`.
+Within a minute, the Adapter should attempt to import the file and log
+its results in `c:\adapter\tmp\import_done\import.log` (this
+directory may be changed – configuration detailed below). If there is an
+error, an email notification should be sent assuming email notifications
+are properly configured.
+
+The import test will cause four fictitious trips to be posted on the
+Clearinghouse – these can be checked by logging into the web site. There
+should be one each for customers:
+
+-   Gloria Stevens
+-   Philip Carroll
+-   Teresa Jones
+-   Antonio Vasquez
+
+These should be rescinded (cancelled) as soon as possible so claimants
+do not think they are real trips. To rescind a trip, click the customer
+name in the right-hand panel to see the full trip details, then find the 
+Rescind action in the left panel.
+
 # Operations
 
 ## Starting / Stopping the Windows Service
@@ -210,147 +264,40 @@ complete, pid 2552 status pid 2552 **exit 0**
     from the Clearinghouse and any files that were imported and uploaded
     to the Clearinghouse.
 
-## Import Test
+## Clearinghouse Synchronization
 
-The file `c:\adapter\test\csv\sample_tickets.csv` contains four sample
-tickets that can be imported to make sure the Adapter is working
-properly. To test, simply copy this file into `c:\adapter\tmp\import`.
-Within a minute, the Adapter should attempt to import the file and log
-its results in `c:\adapter\tmp\import_done\import.log` (this
-directory may be changed – configuration detailed below). If there is an
-error, an email notification should be sent assuming email notifications
-are properly configured.
+Synchronization with the clearing house is done automatically by polling
+the API at regular intervals. The polling process is three steps:
 
-The import test will cause four fictitious trips to be posted on the
-Clearinghouse – these can be checked by logging into the web site. There
-should be one each for customers:
+1.  Poll the Clearinghouse API for updates since the last time we polled
+2.  Run any updates through the export processor
+3.  Run the import proceessor and send anything it reports back up to
+    the API
 
--   Gloria Stevens
--   Philip Carroll
--   Teresa Jones
--   Antonio Vasquez
+TODO Add a separate document will contain the complete specifications
+for allowed and required fields, formats, and exported files.
 
-These should be rescinded (cancelled) as soon as possible so claimants
-do not think they are real trips. To rescind a trip, click the customer
-name in the right-hand panel to see the full trip details, then find the 
-Rescind action in the left panel.
+### General Interactions
 
-## Integration
-
-### General
-
-This version of the Adapter integrates with provider systems via the
-import and export of text files in the CSV format (comma-separated
-values, see http://en.wikipedia.org/wiki/Comma-separated_values).
-
-CSV files must end with a `.txt` or `.csv` extension to be recognized.
-
-The Adapter import and export are configured (in
-`c:\adapter\config\adapter_sync.yml`) as follows:
-
--   `import_folder\`
-    Directory where importable files will be found (default:
-    `c:\adapter\tmp\import`).
--   `completed_folder\`
-     Where files will be moved to after they are imported and where the
-    import.log file will appear, detailing the results of the import
-    (default: `c:\adapter\tmp\import_done`).
--   `export_folder\`
-     Where new data received from the Clearinghouse will be exported
-    (default: `c:\adapter\tmp\export`).
-
-This guide assumes familiarity with the Ride Clearinghouse and related
-terminology (trip tickets, trip claims, trip results).
-
-### Working with Array and Hstore (Hash) Fields
-
-The Clearinghouse stores several customer identifier fields as either
-array or hstore (hash) datatypes. These fields use specific formatting 
-when being stored in a CSV file, and you will need to account for this
-when preparing tickets from your local database for export to the API,
-and when importing Clearinghouse data back into your local database.
-
-#### Array Field Representation
-
-Array fields are represented in CSV in the following format:
-
-```
-customer_mobility_factors
-"{""customer_mobility_factor A"",""customer_mobility_factor B""}"
-```
-
-Note the curly braces (`{` and `}`) that wrap the expression, and the
-escaped quotes (`""`) that wrap each item. Note also that there are no
-spaces before or after the delimiting comma.
-
-#### Hstore (hash) Field Representation
-
-Hstore fields are represented in CSV in the following format:
-
-```
-customer_identifiers
-"""customer_identifier A""=>""customer_identifier B"",""customer_identifier C""=>""customer_identifier D"""
-```
-
-Note that there are NO braces that wrap the whole expression. Both keys
-and values are wrapped in escaped quotes (`""`). Use `=>` to separate
-keys and values, and commas to separate pairs. Note that there are no
-spaces before or after the `=>` or the delimiting comma.
-
-### Share a Trip Ticket with the Clearinghouse
-
-When a provider cannot fulfill a trip and wish to share it in the Ride
-Clearinghouse for other providers to claim, they would typically enter
-the trip ticket to be shared on the Clearinghouse web site. Using the
-Adapter, a trip ticket could be posted to the Clearinghouse by placing
-it in a CSV-formatted text file, then dropping the text file in the
-Adapter’s configured import directory.
-
-The following is an example of a trip ticket in CSV format, ready to be
-imported (note that this trip ticket does not contain all of the
-required data fields for a new trip – it is shortened for readability):
-
-```
-origin_trip_id,customer_first_name,customer_last_name,appointment_time
-"1234","Bob","Smith","2013-07-01 13:00"
-```
-
-A separate document will contain the complete specifications for allowed
-and required fields, formats, and exported files.
-
-### Send Changes to a Shared Trip Ticket
-
-Changes to a trip ticket that was previously shared is relatively
-simple. This just requires a row in a CSV file that includes the changed
-values. The fields `origin_trip_id` and `appointment_time` are required
-for matching, so the original trip is updated and a new trip is not
-created.
-
-### Receive New and Changed Trip Tickets
+#### Receiving New and Changed Trip Tickets
 
 When the Adapter polls the first time, it creates a local copy of all
 Clearinghouse trip tickets originated by your company. This allows the
-Adapter to determine which imported trips are new trips vs. updates, and
-also allows the Adapter to identify changes that occurred on the
-Clearinghouse and should be reported locally.
+Adapter to determine which imported trips are new trips vs. updates.
+Subsequent polling will update the local copy of trips as necessary.
+The local copy is stored in a simplified table in a local Sqlite
+database. You can access this database from you processing scripts if
+you need to, but it is important that your scripts not alter the data
+in any way, i.e. your access should be limited to read-only.
 
-This reporting is accomplished by exporting all new trips and trip
-changes seen on the Clearinghouse to a file in the configured export
-folder. The file will be named `trip_tickets.yyyy-mm-dd.hhmmss.csv` 
-where `yyyy-mm-dd` is the current date and hhmmss is the time the file
-was created.
+#### Receiving  Claims, Comments, and Results
 
-### Receive Claims, Comments, and Results
+The same way new and modified trip tickets are received from the API,
+new and modified trip ticket claims, comments, and results are also
+received. They are passed into the export processor as nested hashes of
+each trip attribute hash.
 
-The same way new and modified trip tickets are exported to the export
-folder, new and modified trip ticket claims, comments, and results are
-also exported to files named:
-
--   `trip_claims.yyyy-mm-dd.hhmmss.csv`
--   `trip_ticket_comments.yyyy-mm-dd.hhmmss.csv`
--   `trip_results.yyyy-mm-dd.hhmmss.csv`
-
-### Receive Claimed Trip Tickets
+#### Receiving Claimed Trip Tickets
 
 When your company submits a claim on a trip ticket on the Clearinghouse
 web site, your Adapter will then download and export a copy of that trip
@@ -359,14 +306,343 @@ to track any changes to the trip you have claimed, for example if it was
 cancelled or the appointment time was changed. This also allows you to
 receive notification when your claim is approved or declined.
 
-### Send Trip Results to the Clearinghouse
+#### Sending Changes to a Shared Trip Ticket
+
+When you have local changes to a shared ticket that you want to update
+in the clearing house, ensure that your import processor includes the
+fields `origin_trip_id` and `appointment_time` (both are required) for
+matching, so the original trip is updated and a new trip is not
+created. It is best to send all of the fields for a trip ticket, even
+those that have not changed. If you want to explicitly remove the value
+of an old field, simply specify an empty value.
+
+#### Sending Trip Results to the Clearinghouse
 
 When a trip you have successfully claimed has been fulfilled or
 otherwise completed, one would typically enter the trip result on the
-Clearinghouse. Trip results can be sent to the Clearinghouse via CSV
-import by including them as updates to the claimed trip. The CSV file
-must contain the origin_trip_id and appointment_time fields so the
-existing trip can be matched.
+Clearinghouse. Trip results can also be sent to the Clearinghouse the 
+import process by including them as nested attributes on any claimed 
+trip that you post to the API.
+
+### Import and Export Processors
+
+Each installation requires an import and an export processor class to
+be defined to act as middle-ware between the software and the adapter.
+Because every provider's transportation software system is different,
+the software is configured such that you can provide your own custom
+processors that interact with your own system as you see fit.
+
+You **must** have a processor configured to use the import and/or export
+functionality. If you enable one of these features but don't  supply a 
+path to a working processor, the synchronization process will fail with 
+an error message each time it is run. A set of sample processors are 
+included in the `processors` folder of the adapter project. You can use 
+these as templates to create your own, or use them as working processors 
+if your import and export needs are basic.
+
+Please note that writing your own processor requires a moderate 
+understanding of the Ruby programming language and Object Oriented
+programing methodologies. If you need help implimenting your own
+processor solution, please contact Ride Connection for more information.
+
+#### Export Processor
+
+The export processor is responsible for taking trip ticket data coming 
+from the Clearinghouse API and ensuring that the information is 
+integrated into your local transportation system.
+
+##### Using the included export processor
+
+To use the included export processors, simply update the export section
+of your `adapter_sync.yml` configuration file to look like this:
+
+```yaml
+export:
+  enabled: true
+  processor: processors/basic_export_processor.rb
+  options: 
+    export_folder: tmp/export
+```
+
+Anytime the adapter receieves changes from the API it will dump the 
+results to flat CSV files in the `c:\adapter\tmp\export` folder. 
+
+An example use case for this scenario may be that you can open these 
+export files in Excel to perform further processing or reporting, or
+use a database administration tool to import them into your 
+transportation system database.
+
+###### Testing the Included Export Processor
+
+TODO add sample files and instructions
+
+##### Writing your own export processor
+
+If the basic functionality described above doesn't work for your system
+you can roll your own export processor. Export processors can do
+anything that Ruby can do - you can add gems, talk to a database, write
+files, peform calculations, etc. Some examples of what a custom export
+processor might do would be to massage clearinghouse data into a format
+that is better suited for the local transportation software, or
+interact directly with a database as opposed to writing to a flat file.
+
+To start writing your own, simply create a new file in the processors 
+directory with a `.rb` extension. Your class must be named 
+`ExportProcessor` and it should inherit from the 
+`Processor::Export::Base` class, so add the following to your new file:
+
+```ruby
+class ExportProcessor < Processor::Export::Base
+end
+```
+
+The Processor::Export::Base class that your ExportProcessor inherits 
+from includes an initializer, so you generally won't need to write your 
+own `initialize` method. In the rare case that you do, be sure to call
+`super` at the begining of your own `initialize` method so that the
+inherited initializer is run first.
+
+All ExportProcessor instances must impliment a public `process` method.
+You can add as many supporting methods or modules as necessary, but the
+only one that will be called by the adapter is the `process` method.
+
+###### The `process` Method
+
+This method must always accept one argument: an array of trip
+attribute hashes (including nested association attributes). It should
+not return any value. What the method does with the data is dependent
+on the local system and can be customized as neecessary. A basic 
+definition would look like this:
+
+```ruby
+class ExportProcessor < Processor::Export::Base
+  def process( parsed_json_array )
+    parsed_json_array.each do |trip_attribute_hash|
+      # do your processing here
+    end
+    
+    # Add code to complete your export process by writing to a file,
+    # database, etc.
+  end
+end
+```
+
+Each trip ticket hash in the incoming array will include 4 nested
+objects:
+
+-   `:trip_claims` will be an array of trip claim attributes if the 
+    trip has any claims on it.
+-   `:trip_ticket_comments` will be an array of trip comment attributes
+    if the trip has any comments.
+-   `:trip_result` will be a hash of result attributes if the trip has
+    a result associated with it.
+    
+Each of these nested objects, and the trip ticket attribute hash
+itself, will include a special boolean attribute named `:new_record`.
+This will be `true` if the adapter does not recognize the trip or
+nested objects from previous exports. You can, for example, use this
+special attribute in your custom export script to determine wither you
+need to insert or update a record in your local system.
+
+When you are done creating your export processor, update the 
+`adapter_sync.yml` configuration file to point to your new script.
+
+###### Export Processor options
+
+The inherited initializer is configured to accept any options that your
+custom processor may need and make them available in the `@options`
+instance variable. For instance, in the supplied processor we needed to
+specify a folder where the exported files would be saved. Any options
+you'd like to make available to an instance of the ExportProcessor can
+be specified in the config/adapter_sync.yml file under the
+export[:options] area. You can specify as many options as you need for
+your specific implementation. For example:
+
+```yaml
+export:
+  enabled: true
+  processor: processors/your_export_processor.rb
+  options: 
+    export_folder: tmp/export
+    some_other_option: some_value
+```
+
+Then anywhere in your export class you could reference 
+`@options[:some_other_option]` to get `some_value`.
+
+###### Logging and Error Reporting
+
+The inherited initializer also instantiates the `@logger` and `@errors`
+instance variables. The `@logger` variable will be a standard Ruby
+logger object that you can write log messages to for debugging or
+informational purposes. The `@errors` variable is an array (initially
+empty), which you can assign any error messages that you would like to
+be sent to system admins after the `process` method has been called as
+part of the AdapterSync process.
+
+#### Import Processor
+
+When a provider cannot fulfill a trip and wish to share it in the Ride
+Clearinghouse for other providers to claim, they would typically enter
+the trip ticket to be shared on the Clearinghouse web site. Using the
+Adapter, a trip ticket could be posted to the Clearinghouse directly.
+
+The import processor is responsible for formatting this trip ticket data
+from the local system and preparing it for upload to the Clearinghouse
+API.
+
+##### Using the included import processor
+
+To use the included import processors, simply update the import section
+of your `adapter_sync.yml` configuration file to look like this:
+
+```yaml
+import:
+  enabled: true
+  processor: processors/basic_import_processor.rb
+  options: 
+    import_folder: tmp/import
+    completed_folder: tmp/import_done
+```
+
+This will cause the import processor to look for CSV (comma-separated
+values, see http://en.wikipedia.org/wiki/Comma-separated_values) files
+in `c:\adapter\tmp\export` that end with a `.txt` or `.csv` extension.
+It expects the files to be formatted in the same way that the basic
+export processor saves them. (You can review the sample CSV file
+included in the
+`c:\adapter\processors\basic_import_processor\sample_tickets.csv` to
+get an idea of what the format should be.) When it is done processing a 
+file, it will attempt to move it to the `completed_folder` location. It
+also keeps track of what files have been imported previously so as not
+to accidentally re-import the same file twice. (Because of this, each 
+new file should have a unique name, such as a timestamp.)
+
+This basic processor may be a good fit for your local system if you
+already have the capability to export to CSV, and your data is already
+in a format that is compatible with the Clearinghouse API.
+
+###### Testing the Included Import Processor
+
+TODO add sample files and instructions
+
+##### Writing your own import processor
+
+If the basic functionality described above doesn't work for your system
+you can roll your own import processor. Like the export processors,
+import processors can do anything that Ruby can do. Some examples of
+what a custom ImportProcessor might do would be to massage data from
+the local transportation system into a format that is better suited for
+the clearinghouse API, or to pick up data directly from a database as
+opposed to reading from a file.
+
+To start writing your own, simply create a new file in the processors 
+directory with a `.rb` extension. Your class must be named 
+`ImportProcessor` and it should inherit from the 
+`Processor::Import::Base` class, so add the following to your new file:
+
+```ruby
+class ImportProcessor < Processor::Import::Base
+end
+```
+
+The Processor::Import::Base class that your ImportProcessor inherits 
+from includes an initializer, so you generally won't need to write your 
+own `initialize` method. In the rare case that you do, be sure to call
+`super` at the begining of your own `initialize` method so that the
+inherited initializer is run first.
+
+All ImportProcessor instances must impliment **two** public methods:
+`process` and `finalize`, You can add as many supporting methods or
+modules as necessary, but only those two methods will be called by the
+adapter.
+
+###### The `process` Method
+
+The `public` method accepts no arguments. It must return an array of
+hashes, each one representing all of the attributes for a trip ticket
+that the CH API would expect, and in the proper format. Where the data
+originates from and what sort of transformations you perform on it is
+dependent on the local system and can be customized as neecessary. A 
+basic definition would look like this:
+
+```ruby
+class ExportProcessor < Processor::Export::Base
+  def process
+    trip_hashes = []
+    
+    # Pick up your data from some external source
+    
+    # Process the data, adding each on to the trip_hashes array
+    
+    # Complete the process by returning the trip_hashes array
+    return trip_hashes
+  end
+end
+```
+
+###### The `finalize` Method
+
+The `finalize` method accepts three arguments: `imported_rows`,
+`skipped_rows`, and `unposted_rows`. Each of these is an array
+containing zero or more trip hashes. (The hashes will be in the same
+format as those reterned by the `process` method) The method should not
+return any value. While it is required that you define this method in
+your ImportProcessor class, it is not required that it actually do any
+thing. It is provided as an optional end point for performing cleanup,
+reporting, maintenance, etc. A bare-minimum, no-op implementation would
+look like this:
+
+```ruby
+class ExportProcessor < Processor::Export::Base
+  def process
+    # ...
+  end
+  
+  def finalize (imported_rows, skipped_rows, unposted_rows)
+    # no-op
+  end
+end
+```
+
+See the included `basic_import_processor.rb` script for an example of
+what a working finalize script may do.
+
+When you are done creating your import processor, update the 
+`adapter_sync.yml` configuration file to point to your new script.
+
+###### Import Processor options
+
+The inherited initializer is configured to accept any options that your
+custom processor may need and make them available in the `@options`
+instance variable. For instance, in the supplied processor we needed to
+specify folders where the imported files would be read from and then
+moved to. Any options you'd like to make available to an instance of
+the ImportProcessor can be specified in the config/adapter_sync.yml
+file under the import[:options] area. You can specify as many options
+as you need for your specific implementation. For example:
+
+```yaml
+import:
+  enabled: true
+  processor: processors/your_import_processor.rb
+  options: 
+    import_folder: tmp/import
+    some_other_option: some_value
+```
+
+Then anywhere in your import class you could reference 
+`@options[:some_other_option]` to get `some_value`.
+
+###### Logging and Error Reporting
+
+The inherited initializer also instantiates the `@logger` and `@errors`
+instance variables. The `@logger` variable will be a standard Ruby
+logger object that you can write log messages to for debugging or
+informational purposes. The `@errors` variable is an array (initially
+empty), which you can assign any error messages that you would like to
+be sent to system admins after both the `process` and `finalize`
+methods have been called as part of the AdapterSync process.
 
 ## Notifications
 
@@ -390,19 +666,16 @@ correct the error for some time.
 
 ### Polling Errors
 
--   The Adapter may encounter problems while importing new data to send
-    to the Clearinghouse, or while using the Clearinghouse service APIs
-    to exchange data. In the former case, the data that caused the
-    errors will be skipped and a message will be received similar to:
-    “Encountered {\#} errors while importing file {name} at {time}”
-    followed by the error description. The import log (see section
-    entitled *Logging*) will contain the error details to assist in
-    correcting the import data format.
+Any errors
+
 -   When Clearinghouse service errors are encountered, a notification
     will be sent containing a message similar to: “Encountered {\#}
     errors while syncing with the Ride Clearinghouse” followed by the
     error description. Details on these errors will be located in
     c:\adapter\log\adapter_sync.log.
+-   Any errors that the import and export processors add to their 
+    `@errors` array will be sent as notifications after their processing
+    work has completed.
 
 ## Logging
 
@@ -455,7 +728,8 @@ with an Adapter installation.
 Located in: `c:\adapter\log\adapter_sync.log`
 
 Contains detailed activity and debugging information for the Adapter’s
-main worker process. 
+main worker process. Any messages that your Import or Export processor 
+scripts send to their `@logger` objects will also be included here.
 
 #### Log Messages
 
@@ -467,66 +741,20 @@ operation are as follows:
 -   Retrieved [\#] updated trips from API\
      The Adapter has found trip tickets on the Clearinghouse server that
     are new, updated, or have new comments, claims, or results added.
--   Import folder not configured, will not check for files to import\
-     Import folder is not configured in
-    `c:\adapter\config\adapter_sync.yml.`
--   Import folder [directory name] does not exist\
-     The import folder configured in
-    `c:\adapter\config\adapter_sync.yml` is not a valid directory or
-    inaccessible to the Adapter.
--   Starting import from directory [directory name] with output
-    directory [directory name]
--   Skipping file [file name] which was previously imported
--   Imported [\#] files\
-     This will be followed by the results for each file that was
-    imported.
--   Export folder not configured, will not export new changes detected
-    on the Clearinghouse\
-     Export folder is not configured in
-    `c:\adapter\config\adapter_sync.yml.`
--   Export folder [directory name] does not exist\
-     The import folder configured in
-    `c:\adapter\config\adapter_sync.yml` is not a valid directory or
-    inaccessible to the Adapter.
 -   Error notification failed, could not send email: [email contents]\
      There is a problem with sending emails from the Adapter. Check
     email notification configuration in `c:\adapter\config\mail.yml`.
 
-### Import Log
-
-Located in: `c:\adapter\tmp\import_done\import.log`
-
-A detailed account of data import operations including any errors
-encountered. This file may be in a different folder if you change the
-value of `completed_folder` in `config/adapter_sync.yml`.
-
 #### Normal Log Messages
 
--   Starting import from directory [directory name]
--   Found [\#] files to import
--   File [file name] skipped\
-     This indicates that the file was previously imported and will be
-    skipped until its file name or contents are changed.
--   Importing [file name]
--   Processing [\#] rows
--   Row [\#] data: [row data]
--   Row [\#] error: [error message]
 -   POST trip ticket with API, result [server API response]\
      The import process created a new trip on the Clearinghouse server.
 -   PUT trip ticket with API, result [server API response]\
      The import process updated an existing trip on the Clearinghouse
     server.
--   Successfully imported [\#] rows, [\#] rows had errors and could not
-    be processed\
-     The rows that could not be imported will be detailed in the log. If
-    they need to be imported, they will need to be fixed and included in
-    a new import file.
 
 #### Common Error Messages
 
--   Imported row does not contain an origin_trip_id value\
-     This indicates that the imported row is missing it’s required
-    origin_trip_id field.
 -   API result does not contain an ID\
      This indicates an error when exchanging data with the Clearinghouse
     – the response from the server was missing a key field.
@@ -538,18 +766,6 @@ value of `completed_folder` in `config/adapter_sync.yml`.
      Indicates an error from the Clearinghouse while attempting to
     update an existing trip. Generally this results from improper or
     missing data fields.
--   Error marking file as imported, please make sure Adapter has
-    read-write access to [file name]\
-     The Adapter attempts to rename or move imported files so they are
-    not imported again. If this cannot be done, file permissions may be
-    preventing the Adapter from modifying the file.
--   Error marking file as imported with errors, please make sure Adapter
-    has read-write access to [file name]\
-     In case of an unexpected error that the Adapter cannot recover
-    from, the import file will be renamed with a `.error` extension to
-    prevent repeated attempts to import a bad file. If this cannot be
-    done, file permissions may be preventing the Adapter from modifying
-    the file.
 
 # Removal
 
@@ -609,8 +825,13 @@ adapter_sync.poll
 bundle exec rake test
 ```
 
-Some tests still require a running Clearinghouse API service. You can 
-clone the project from https://github.com/rideconnection/clearinghouse
-and run the server locally, then update the config scripts to point to
-the local service. You will also need to ensure that a Provider exists 
-and use that provider's public and private keys in the config scripts.
+Tests that require communication with an API endpoint should save and
+reuse VCR sessions so that a running API is not a requirement for
+running subsequent tests. 
+
+If you are developing new tests that need to talk to an instance of the
+API, you can clone the project from 
+https://github.com/rideconnection/clearinghouse and run the server 
+locally. You will need to ensure that a Provider exists and specify that
+provider's public and private keys in the config scripts for the 
+adapter.
