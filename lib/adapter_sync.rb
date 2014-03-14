@@ -63,9 +63,9 @@ class AdapterSync
   attr_accessor :options, :logger, :errors, :exported_trips, 
     :imported_trips, :export_processor, :import_processor
     
-  def initialize(opts = {})
+  def initialize(opts = nil)
     @logger = Logger.new(LOG_FILE, 'weekly')
-    @options = opts.presence || load_config(CONFIG_FILE)
+    @options = opts || load_config(CONFIG_FILE)
 
     @errors, @exported_trips, @imported_trips = [[], [], []]
 
@@ -80,20 +80,28 @@ class AdapterSync
     @clearinghouse = ApiClient.new(apiconfig)
     
     # create ExportProcessor and ImportProcessor instances
-    require File.join(BASE_DIR, options[:export][:processor]) if options[:export].try(:[], :processor).present?
-    require File.join(BASE_DIR, options[:import][:processor]) if options[:import].try(:[], :processor).present?
-    @export_processor = ExportProcessor.new(@logger, options[:export].try(:[], :options))
-    @import_processor = ImportProcessor.new(@logger, options[:import].try(:[], :options))
+    @options[:export] ||= {}
+    @options[:import] ||= {}
+    require File.join(BASE_DIR, options[:export][:processor]) if options[:export][:enabled] && options[:export][:processor].present?
+    require File.join(BASE_DIR, options[:import][:processor]) if options[:import][:enabled] && options[:import][:processor].present?
+    @export_processor = ExportProcessor.new(logger, options[:export][:options])
+    @import_processor = ImportProcessor.new(logger, options[:import][:options])
   end
 
   def poll
     @exported_trips, @imported_trips = [[], []]
-    replicate_clearinghouse
-    export_tickets
-    import_tickets
-  rescue Exception => e
-    logger.error e.message + "\n" + e.backtrace.join("\n")
-    raise
+    begin
+      TripTicket.transaction do
+        replicate_clearinghouse
+        export_tickets
+        import_tickets
+      end
+    rescue Exception => e
+      error = e.message + "\n" + e.backtrace.join("\n")
+      logger.error error
+      report_errors "polling for changes", [error]
+      raise e
+    end
   end
 
   def replicate_clearinghouse
@@ -105,13 +113,13 @@ class AdapterSync
       trip_data = trip.data.deep_dup
       process_updated_clearinghouse_trip(trip_data)
     }.compact
-    report_errors "syncing with the Ride Clearinghouse", @errors
+    report_errors "syncing with the Ride Clearinghouse", errors
   end
 
   def export_tickets
     @errors = []
     return unless options[:export][:enabled]
-    export_processor.process(@exported_trips)
+    export_processor.process(exported_trips)
     report_errors "processing the exported trip tickets", export_processor.errors
   end
 
@@ -149,7 +157,7 @@ class AdapterSync
     
     import_processor.finalize(imported_rows, skipped_rows, unposted_rows)
     
-    report_errors "processing the imported trip tickets", import_processor.errors + @errors
+    report_errors "processing the imported trip tickets", import_processor.errors + errors
   end
 
   protected

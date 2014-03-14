@@ -22,7 +22,7 @@ describe AdapterSync do
     ImportProcessor.any_instance.stubs(:process).returns([])
     ImportProcessor.any_instance.stubs(:finalize)
 
-    @adapter = AdapterSync.new
+    @adapter = AdapterSync.new({})
 
     DatabaseCleaner.clean_with(:truncation)
   end
@@ -55,6 +55,23 @@ describe AdapterSync do
       @adapter.expects(:export_tickets).once
       @adapter.expects(:import_tickets).once
       @adapter.poll
+    end
+        
+    it "handles any errors raised during polling by rolling back all database transactions, sending a notification, and then re-raising the error" do
+      # #get_updated_clearinghouse_trips records all new trips in the
+      # database, therefore TripTicket.count would == 1 at the end
+      new_trip = ApiClient.new
+      new_trip.stubs(:data).returns({id: 2})
+      @adapter.stubs(:get_updated_clearinghouse_trips).returns([new_trip])
+      
+      # Raise an error
+      @adapter.stubs(:import_tickets).raises
+      
+      # Ensure that a notification is sent, the database is rolled 
+      # back, and the error is re-raised
+      AdapterNotification.any_instance.expects(:send).once
+      Proc.new { @adapter.poll }.must_raise(RuntimeError)
+      TripTicket.count.must_equal 0
     end
   end
 
@@ -172,22 +189,26 @@ describe AdapterSync do
     end
     
     it "reports any errors encountered durring pre-processing" do
-      @adapter.errors = ["error"]
       AdapterNotification.any_instance.expects(:send).once
+      @adapter.stubs(:errors).returns(["error"])
       @adapter.replicate_clearinghouse
     end
   end
   
   describe "#export_tickets" do
-    it "skips export step if not enabled" do
-      @adapter.options[:export][:enabled] = false
-      @adapter.export_processor.expects(:process).never
-      @adapter.export_tickets
+    before do
+      @adapter.options[:export][:enabled] = true
     end
-
+      
     it "calls the export processor step if enabled and passes in the updated trips" do
       @adapter.exported_trips = [{'id' => '1'}]
       @adapter.export_processor.expects(:process).with(@adapter.exported_trips).once
+      @adapter.export_tickets
+    end
+
+    it "skips export step if not enabled" do
+      @adapter.options[:export][:enabled] = false
+      @adapter.export_processor.expects(:process).never
       @adapter.export_tickets
     end
 
@@ -215,12 +236,7 @@ describe AdapterSync do
         scheduling_priority: 'pickup',
       }
       @adapter.import_processor.stubs(:process).returns([@minimum_trip_attributes])
-    end
-  
-    it "skips import step if not enabled" do
-      @adapter.options[:import][:enabled] = false
-      @adapter.import_processor.expects(:process).never
-      @adapter.import_tickets
+      @adapter.options[:import][:enabled] = true
     end
   
     it "calls the import processor step if enabled" do
@@ -228,6 +244,12 @@ describe AdapterSync do
       @adapter.import_tickets
     end
 
+    it "skips import step if not enabled" do
+      @adapter.options[:import][:enabled] = false
+      @adapter.import_processor.expects(:process).never
+      @adapter.import_tickets
+    end
+  
     it "reports any errors logged by the import processor" do
       stub_result = ApiClient.new.tap {|result| result[:id] = 1379 }
       ApiClient.any_instance.expects(:post).once.returns(stub_result)
