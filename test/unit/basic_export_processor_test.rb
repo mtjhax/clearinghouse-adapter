@@ -15,7 +15,7 @@
 require 'test_helper'
 require 'support/file_helpers'
 require 'hash'
-require_relative '../../processors/basic_export_processor'
+require_relative '../../processors/basic_export_processor/basic_export_processor'
 
 describe ExportProcessor do
   include FileHelpers

@@ -19,22 +19,6 @@ require 'csv'
 require 'export_processor'
 require 'fileutils'
 
-# This is working example of an extended ExportProcessor class. To use
-# this as the ExportProcessor in your adapter installation, simply 
-# update the config/adapter_sync.yml file by specifying the path to this
-# file as the export[:processor] value.
-
-# In this example, the #process method will write out the exported trip
-# data to CSV files: one each for trip tickets, trip claims, trip
-# comments and trip results. The data will remain largely unchanged,
-# though we will flatten out any array or hstore (hash) attributes into
-# individual columns, and any associated address attributes will be
-# added as columns on the trip record.
-
-# This processor requires a single configuration options, 
-# `export_folder`, which is a path (relative to the project root) where
-# the CSV files will be saved.
-
 Time.zone = "UTC"
 
 class ExportProcessor < Processor::Export::Base

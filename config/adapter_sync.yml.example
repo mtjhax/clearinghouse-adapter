@@ -1,12 +1,12 @@
-import:
+export:
   enabled: true
-  processor: processors/basic_import_processor.rb
+  processor: basic_export_processor/basic_export_processor.rb
+  options: 
+    export_folder: tmp/export
+
+import:
+  enabled: false
+  processor: basic_import_processor/basic_import_processor.rb
   options: 
     import_folder: tmp/import
     completed_folder: tmp/import_done
-
-export:
-  enabled: true
-  processor: processors/basic_export_processor.rb
-  options: 
-    export_folder: tmp/export

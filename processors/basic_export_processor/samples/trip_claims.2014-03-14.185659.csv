@@ -1,0 +1,2 @@
+id,claimant_provider_id,claimant_customer_id,claimant_service_id,claimant_trip_id,trip_ticket_id,status,proposed_pickup_time,proposed_fare,notes,created_at,updated_at,is_claimant,new_record
+61,3,,,,82,approved,2014-03-14T11:00:00-07:00,13.5,Et totam qui placeat.,2014-03-14T11:50:38-07:00,2014-03-14T11:51:18-07:00,false,true

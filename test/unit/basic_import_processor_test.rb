@@ -14,7 +14,7 @@
 
 require 'test_helper'
 require 'support/file_helpers'
-require_relative '../../processors/basic_import_processor'
+require_relative '../../processors/basic_import_processor/basic_import_processor'
 
 describe ImportProcessor do
   include FileHelpers

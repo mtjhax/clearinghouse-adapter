@@ -59,6 +59,7 @@ class AdapterSync
   API_CONFIG_FILE = File.join(BASE_DIR, 'config', 'api.yml')
   DB_CONFIG_FILE  = File.join(BASE_DIR, 'config', 'database.yml')
   MIGRATIONS_DIR  = File.join(BASE_DIR, 'db', 'migrations')
+  PROCESSORS_DIR  = File.join(BASE_DIR, 'processors')
 
   attr_accessor :options, :logger, :errors, :exported_trips, 
     :imported_trips, :export_processor, :import_processor
@@ -82,8 +83,8 @@ class AdapterSync
     # create ExportProcessor and ImportProcessor instances
     @options[:export] ||= {}
     @options[:import] ||= {}
-    require File.join(BASE_DIR, options[:export][:processor]) if options[:export][:enabled] && options[:export][:processor].present?
-    require File.join(BASE_DIR, options[:import][:processor]) if options[:import][:enabled] && options[:import][:processor].present?
+    require File.join(PROCESSORS_DIR, options[:export][:processor]) if options[:export][:enabled] && options[:export][:processor].present?
+    require File.join(PROCESSORS_DIR, options[:import][:processor]) if options[:import][:enabled] && options[:import][:processor].present?
     @export_processor = ExportProcessor.new(logger, options[:export][:options])
     @import_processor = ImportProcessor.new(logger, options[:import][:options])
   end

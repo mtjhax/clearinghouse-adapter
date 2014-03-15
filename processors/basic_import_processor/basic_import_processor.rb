@@ -17,27 +17,10 @@ require 'active_record_connection'
 require 'active_support/core_ext/object'
 require 'active_support/core_ext/hash'
 require 'active_support/time_with_zone'
-require_relative 'basic_import_processor/csv_import'
-require_relative 'basic_import_processor/imported_file'
 require 'import_processor'
 require 'sqlite3'
-
-# This is working example of an extended ImportProcessor class. To use
-# this as the ImportProcessor in your adapter installation, simply 
-# update the config/adapter_sync.yml file by specifying the path to this
-# file as the import[:processor] value.
-
-# In this example, the #process method will pick up CSV files from a
-# directory, parse the contents, and finally format it to better 
-# represent trip ticket data. We will use the #finalize method to move
-# processed files to a different directory, and to record the names of 
-# the files we processed so that we don't accidentally process them 
-# again later.
-
-# This processor requires a two configuration options: 
-# `import_folder`, which is a path (relative to the project root) where
-# the CSV files will be read from, and `completed_folder`, which is a
-# path to where the processed files will be moved to.
+require_relative 'csv_import'
+require_relative 'imported_file'
 
 Time.zone = "UTC"
 
