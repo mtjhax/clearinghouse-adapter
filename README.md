@@ -239,95 +239,31 @@ complete, pid 2552 status pid 2552 **exit 0**
 
 # Clearinghouse Synchronization
 
-Synchronization with the clearing house is done automatically by polling
-the API at regular intervals. The polling process is three steps:
+Once the service has been started, synchronization with the clearing
+house is done automatically by polling the API at regular intervals.
+The polling process is four steps:
 
-1.  Poll the Clearinghouse API for updates since the last time we polled
+1.  Request all updates since the last time we polled from the 
+    Clearinghouse API
 2.  Run any updates through the export processor
-3.  Run the import proceessor and send anything it reports back up to
-    the API
+3.  Run the import proceessor to collect data from the local system
+4.  Send any local reported by the import processor back up to the API
 
-TODO Add a separate document which contains the complete specifications
-for allowed and required fields, formats, and exported files.
-
-## API Interactions
-
-TODO document how the local database is used to track previously synchronized tickets, including matching up CH IDs of known trips when importing changed trip tickets
-
-### Receiving New and Changed Trip Tickets
+## Step 1: Request updates from the Clearinghouse API
 
 When the Adapter polls the first time, it creates a local copy of all
 Clearinghouse trip tickets originated by your company. This allows the
 Adapter to determine which imported trips are new trips vs. updates.
-Subsequent polling will update the local copy of trips as necessary.
-The local copy is stored in a simplified table in a local Sqlite
-database. You can access this database from you processing scripts if
-you need to, but it is important that your scripts not alter the data
-in any way, i.e. your access should be limited to read-only.
-
-#### Sample Format
-
-TODO add sample incoming trip ticket format
-
-### Receiving  Claims, Comments, and Results
-
-The same way new and modified trip tickets are received from the API,
-new and modified trip ticket claims, comments, and results are also
-received. They are passed into the export processor as nested hashes of
-each trip attribute hash.
-
-#### Sample Format
-
-TODO add sample incoming claim, comment and result formats
-
-### Receiving Claimed Trip Tickets
+Subsequent polling will update the local copy of trips as necessary. 
 
 When your company submits a claim on a trip ticket on the Clearinghouse
-web site, your Adapter will then download and export a copy of that trip
-ticket, its associated claims and comments, and updates. This allows you
+web site, your Adapter will then download a copy of that trip
+ticket, its associated claims and comments, and any updates. This allows you
 to track any changes to the trip you have claimed, for example if it was
 cancelled or the appointment time was changed. This also allows you to
 receive notification when your claim is approved or declined.
 
-#### Sample Format
-
-TODO add sample claimed trip ticket format
-
-### Sending New Trip Tickets
-
-TODO add information about sending new trip tickets
-
-#### Sample Format
-
-TODO document expected data format and required fields for new trip tickets
-
-### Sending Changes to a Shared Trip Ticket
-
-When you have local changes to a shared ticket that you want to update
-in the clearing house, ensure that your import processor includes the
-fields `origin_trip_id` and `appointment_time` (both are required) for
-matching, so the original trip is updated and a new trip is not
-created. It is best to send all of the fields for a trip ticket, even
-those that have not changed. If you want to explicitly remove the value
-of an old field, simply specify an empty value.
-
-#### Sample Format
-
-TODO document expected data format and required fields for changed trip tickets
-
-### Sending Trip Results to the Clearinghouse
-
-When a trip you have successfully claimed has been fulfilled or
-otherwise completed, one would typically enter the trip result on the
-Clearinghouse. Trip results can also be sent to the Clearinghouse the 
-import process by including them as nested attributes on any claimed 
-trip that you post to the API.
-
-#### Sample Format
-
-TODO document expected data format and required fields for trip results
-
-## Import and Export Processors
+## Steps 2 & 3: Import and Export Processors
 
 Each installation requires an import and an export processor class to
 be defined to act as middle-ware between the software and the adapter.
@@ -654,6 +590,32 @@ informational purposes. The `@errors` variable is an array (initially
 empty), which you can assign any error messages that you would like to
 be sent to system admins after both the `process` and `finalize`
 methods have been called as part of the AdapterSync process.
+
+## Step 4: Sending data back to the Clearinghouse API
+
+TODO document expected data format and required fields for sending data
+
+### Sending New Trip Tickets
+
+TODO add information about sending new trip tickets
+
+### Sending Changes to a Shared Trip Ticket
+
+When you have local changes to a shared ticket that you want to update
+in the clearing house, ensure that your import processor includes the
+fields `origin_trip_id` and `appointment_time` (both are required) for
+matching, so the original trip is updated and a new trip is not
+created. It is best to send all of the fields for a trip ticket, even
+those that have not changed. If you want to explicitly remove the value
+of an old field, simply specify an empty value.
+
+### Sending Trip Results to the Clearinghouse
+
+When a trip you have successfully claimed has been fulfilled or
+otherwise completed, one would typically enter the trip result on the
+Clearinghouse. Trip results can also be sent to the Clearinghouse by
+including them as nested attributes on any claimed trip that you post
+to the API.
 
 ## Notifications
 
