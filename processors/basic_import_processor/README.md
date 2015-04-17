@@ -3,7 +3,7 @@
 This is a working example of an extended ImportProcessor class and
 support files. 
 
-To use that as your import processor, simply update the import section
+To use it as your import processor, simply update the import section
 of your `adapter_sync.yml` configuration file to look like this:
 
 ```yaml

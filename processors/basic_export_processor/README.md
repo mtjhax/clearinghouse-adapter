@@ -2,7 +2,7 @@
 
 This is working example of an extended ExportProcessor class. 
 
-To use that as your export processor, simply update the export section
+To use it as your export processor, simply update the export section
 of your `adapter_sync.yml` configuration file to look like this:
 
 ```yaml
@@ -15,7 +15,7 @@ export:
 
 This processor requires a single configuration option, `export_folder`,
 which is a path (relative to the project root) where the CSV files will
-be saved. Anytime the adapter receieves changes from the API it will
+be saved. Anytime the adapter receives changes from the API it will
 dump the results to flat CSV files in this folder. The files will be
 named `trip_object.yyyy-mm-dd.hhmmss.csv` where `trip_object` is one of
 `trip_claims`, `trip_results`, `trip_ticket_comments`, or

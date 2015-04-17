@@ -145,7 +145,7 @@ Locate and edit the file `c:\adapter\config\api.yml`
 ### database.yml
 
 The default configuration for this file should be sufficient for most
-instalations.
+installations.
 
 ### mail.yml
 
@@ -246,8 +246,8 @@ The polling process is four steps:
 1.  Request all updates since the last time we polled from the 
     Clearinghouse API
 2.  Run any updates through the export processor
-3.  Run the import proceessor to collect data from the local system
-4.  Send any local reported by the import processor back up to the API
+3.  Run the import processor to collect data from the local system
+4.  Send any local updates reported by the import processor back up to the API
 
 ## Step 1: Request updates from the Clearinghouse API
 
@@ -281,7 +281,7 @@ if your import and export needs are basic.
 
 Please note that writing your own processor requires a moderate 
 understanding of the Ruby programming language and Object Oriented
-programing methodologies. If you need help implimenting your own
+programing methodologies. If you need help implementing your own
 processor solution, please contact Ride Connection for more information.
 
 ### Export Processor
@@ -297,13 +297,13 @@ using the included export processor.
 
 #### Writing your own export processor
 
-If the basic functionality described above doesn't work for your system
-you can roll your own export processor. Export processors can do
-anything that Ruby can do - you can add gems, talk to a database, write
-files, peform calculations, etc. Some examples of what a custom export
-processor might do would be to massage clearinghouse data into a format
-that is better suited for the local transportation software, or
-interact directly with a database as opposed to writing to a flat file.
+If the basic functionality provided by the included export processor doesn't
+work for your system you can roll your own export processor. Export processors
+can do anything that Ruby can do - you can add gems, talk to a database, write
+files, perform calculations, etc. Some examples of what a custom export
+processor might do would be to massage clearinghouse data into a format that is
+better suited for the local transportation software, or interact directly with
+a database as opposed to writing to a flat file.
 
 To start writing your own, simply create a new file in the `processors` 
 directory with a `.rb` extension. Your class must be named 
@@ -318,7 +318,7 @@ end
 The Processor::Export::Base class that your ExportProcessor inherits 
 from includes an initializer, so you generally won't need to write your 
 own `initialize` method. In the rare case that you do, be sure to call
-`super` at the begining of your own `initialize` method so that the
+`super` at the beginning of your own `initialize` method so that the
 inherited initializer is run first.
 
 All ExportProcessor instances must impliment a public `process` method.
@@ -330,12 +330,12 @@ only one that will be called by the adapter is the `process` method.
 This method must always accept one argument: an array of trip
 attribute hashes (including nested association attributes). It should
 not return any value. What the method does with the data is dependent
-on the local system and can be customized as neecessary. A basic 
+on the local system and can be customized as necessary. A basic 
 definition would look like this:
 
 ```ruby
 class ExportProcessor < Processor::Export::Base
-  def process( parsed_json_array )
+  def process(parsed_json_array)
     parsed_json_array.each do |trip_attribute_hash|
       # do your processing here
     end
@@ -417,13 +417,13 @@ using the included import processor.
 
 #### Writing your own import processor
 
-If the basic functionality described above doesn't work for your system
-you can roll your own import processor. Like the export processors,
-import processors can do anything that Ruby can do. Some examples of
-what a custom ImportProcessor might do would be to massage data from
-the local transportation system into a format that is better suited for
-the clearinghouse API, or to pick up data directly from a database as
-opposed to reading from a file.
+If the basic functionality provided by the included import processor doesn't
+work for your system you can roll your own import processor. Like the export
+processors, import processors can do anything that Ruby can do. Some examples
+of what a custom ImportProcessor might do would be to massage data from the
+local transportation system into a format that is better suited for the
+clearinghouse API, or to pick up data directly from a database as opposed to
+reading from a file.
 
 To start writing your own, simply create a new file in the processors 
 directory with a `.rb` extension. Your class must be named 
@@ -438,7 +438,7 @@ end
 The Processor::Import::Base class that your ImportProcessor inherits 
 from includes an initializer, so you generally won't need to write your 
 own `initialize` method. In the rare case that you do, be sure to call
-`super` at the begining of your own `initialize` method so that the
+`super` at the beginning of your own `initialize` method so that the
 inherited initializer is run first.
 
 All ImportProcessor instances must impliment **two** public methods:
@@ -452,7 +452,7 @@ The `public` method accepts no arguments. It must return an array of
 hashes, each one representing all of the attributes for a trip ticket
 that the CH API would expect, and in the proper format. Where the data
 originates from and what sort of transformations you perform on it is
-dependent on the local system and can be customized as neecessary. A 
+dependent on the local system and can be customized as necessary. A 
 basic definition would look like this:
 
 ```ruby
@@ -534,7 +534,7 @@ TODO update this to just describe the required and optional fields for **new** a
 The `finalize` method accepts three arguments: `imported_rows`,
 `skipped_rows`, and `unposted_rows`. Each of these is an array
 containing zero or more trip hashes. (The hashes will be in the same
-format as those reterned by the `process` method) The method should not
+format as those returned by the `process` method) The method should not
 return any value. While it is required that you define this method in
 your ImportProcessor class, it is not required that it actually do any
 thing. It is provided as an optional end point for performing cleanup,
