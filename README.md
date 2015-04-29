@@ -183,6 +183,7 @@ connection:\
     the service, type the following at the Windows command prompt:
 
 ```
+cd c:\adapter
 c:\adapter\bin\install_adapter_service
 ```
 
