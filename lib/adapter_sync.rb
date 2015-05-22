@@ -68,7 +68,6 @@ class AdapterSync
     @logger = Logger.new(LOG_FILE, 'weekly')
 
     # support passing database and API configuration in params, opts[:database] and opts[:api]
-    opts = opts.try(:with_indifferent_access)
     db_opts = opts.delete(:database)
     api_opts = opts.delete(:api)
 
@@ -263,7 +262,7 @@ class AdapterSync
   end
 
   def load_config(file, additional_options = {}, environment = nil)
-    config = (YAML::load(File.open(file)) || {}).merge(additional_options || {}).with_indifferent_access
+    config = (YAML::load(File.open(file)) || {}).merge(additional_options || {})
     environment && config[environment] || config
   end
 
