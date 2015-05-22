@@ -262,8 +262,8 @@ class AdapterSync
   end
 
   def load_config(file, additional_options = {}, environment = nil)
-    config = (YAML::load(File.open(file)) || {}).merge(additional_options || {})
-    environment && config[environment] || config
+    config = (YAML::load(File.open(file)) || {})
+    (environment && config[environment] || config).merge(additional_options || {})
   end
 
   def report_errors(error_message, errors)
