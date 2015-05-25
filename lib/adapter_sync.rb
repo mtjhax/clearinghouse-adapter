@@ -68,8 +68,8 @@ class AdapterSync
     @logger = Logger.new(LOG_FILE, 'weekly')
 
     # support passing database and API configuration in params, opts[:database] and opts[:api]
-    db_opts = opts.delete(:database)
-    api_opts = opts.delete(:api)
+    db_opts = opts.try(:delete, :database)
+    api_opts = opts.try(:delete, :api)
 
     @options = load_config(CONFIG_FILE, opts)
 
