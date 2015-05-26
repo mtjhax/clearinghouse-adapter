@@ -1,0 +1,275 @@
+---
+http_interactions:
+- request:
+    method: post
+    uri: http://localhost:3000/api/v1/trip_tickets
+    body:
+      encoding: US-ASCII
+      string: api_key=fb3c85be27b6e810925d75b3d9f08f25&nonce=1432599266%3A1&timestamp=2015-05-25T20%3A14%3A26-04%3A00&hmac_digest=8b45d32d3fc3df0d49db7358ee491d475f256301&trip_ticket%5Borigin_trip_id%5D=originator-trip-id-12345&trip_ticket%5Borigin_customer_id%5D=222&trip_ticket%5Bcustomer_first_name%5D=Bob&trip_ticket%5Bcustomer_last_name%5D=Smith&trip_ticket%5Bcustomer_dob%5D=1%2F2%2F1955&trip_ticket%5Bcustomer_primary_phone%5D=222-333-4444&trip_ticket%5Bcustomer_seats_required%5D=1&trip_ticket%5Brequested_pickup_time%5D=09%3A00&trip_ticket%5Bappointment_time%5D=2016-01-01T09%3A00%3A00Z&trip_ticket%5Brequested_drop_off_time%5D=13%3A00&trip_ticket%5Bcustomer_information_withheld%5D=false&trip_ticket%5Bscheduling_priority%5D=pickup
+    headers:
+      Accept:
+      - ! '*/*; q=0.5, application/xml'
+      Accept-Encoding:
+      - gzip, deflate
+      Content-Length:
+      - '727'
+      Content-Type:
+      - application/x-www-form-urlencoded
+      User-Agent:
+      - Ruby
+  response:
+    status:
+      code: 201
+      message: Created
+    headers:
+      Content-Type:
+      - application/json
+      Content-Length:
+      - '1773'
+      X-Ua-Compatible:
+      - IE=Edge
+      Etag:
+      - ! '"8f1a105eb9e5432fa6e42a916ed8f8b6"'
+      Cache-Control:
+      - max-age=0, private, must-revalidate
+      X-Request-Id:
+      - de8e10646945ea74e45f9efefd4a01a2
+      X-Runtime:
+      - '0.802618'
+      Connection:
+      - keep-alive
+      Server:
+      - thin 1.5.0 codename Knife
+    body:
+      encoding: US-ASCII
+      string: ! '{"id":36,"status":"Active","rescinded":false,"origin_provider_id":1,"origin_customer_id":"222","origin_trip_id":0,"pick_up_location_id":null,"drop_off_location_id":null,"customer_address_id":null,"customer_first_name":"Bob","customer_last_name":"Smith","customer_middle_name":null,"customer_dob":"1955-02-01","customer_primary_phone":"222-333-4444","customer_emergency_phone":null,"customer_primary_language":null,"customer_ethnicity":null,"customer_race":null,"customer_information_withheld":false,"customer_identifiers":{},"customer_notes":null,"customer_boarding_time":0,"customer_deboarding_time":0,"customer_seats_required":1,"customer_impairment_description":null,"customer_service_level":null,"customer_mobility_factors":null,"customer_service_animals":null,"customer_eligibility_factors":null,"num_attendants":0,"num_guests":0,"requested_pickup_time":"2000-01-01T09:00:00Z","earliest_pick_up_time":null,"appointment_time":"2016-01-01T09:00:00Z","requested_drop_off_time":"2000-01-01T13:00:00Z","trip_purpose_description":null,"trip_funders":null,"trip_notes":null,"scheduling_priority":"pickup","customer_gender":null,"estimated_distance":null,"additional_data":{},"time_window_before":-1,"time_window_after":-1,"created_at":"2015-05-26
+        00:14:27.426542","updated_at":"2015-05-26 00:14:27.426542","originator":{"id":1,"name":"Google","primary_contact_email":"some@nights.fun","address":{"id":1,"address_1":"123
+        Main St","address_2":null,"city":"Portland","position":null,"state":"OR","zip":"97210","phone_number":null,"common_name":null,"jurisdiction":null,"created_at":"2015-05-13T21:00:14Z","updated_at":"2015-05-13T21:00:14Z"}},"customer_address":null,"pick_up_location":null,"drop_off_location":null,"trip_result":null,"trip_claims":[],"trip_ticket_comments":[]}'
+    http_version: 
+  recorded_at: Tue, 26 May 2015 00:14:27 GMT
+- request:
+    method: post
+    uri: http://localhost:3000/api/v1/trip_tickets/36/trip_claims
+    body:
+      encoding: US-ASCII
+      string: api_key=c8b6abce74cd58efd3b7d0a2045fbf85&nonce=1432599267%3A1&timestamp=2015-05-25T20%3A14%3A27-04%3A00&hmac_digest=169a1f552f91f706d2b152fd5eff639ec2ea98fc&trip_claim%5Bproposed_pickup_time%5D=2016-01-01T09%3A00%3A00Z&trip_claim%5Bstatus%5D=pending
+    headers:
+      Accept:
+      - ! '*/*; q=0.5, application/xml'
+      Accept-Encoding:
+      - gzip, deflate
+      Content-Length:
+      - '249'
+      Content-Type:
+      - application/x-www-form-urlencoded
+      User-Agent:
+      - Ruby
+  response:
+    status:
+      code: 201
+      message: Created
+    headers:
+      Content-Type:
+      - application/json
+      Content-Length:
+      - '635'
+      X-Ua-Compatible:
+      - IE=Edge
+      Etag:
+      - ! '"d30fcca33363d6c34cc1e571d980534f"'
+      Cache-Control:
+      - max-age=0, private, must-revalidate
+      X-Request-Id:
+      - 17c5e25b73a89204389eabdd8e95a0b5
+      X-Runtime:
+      - '0.087508'
+      Connection:
+      - keep-alive
+      Server:
+      - thin 1.5.0 codename Knife
+    body:
+      encoding: US-ASCII
+      string: ! '{"id":11,"claimant_provider_id":2,"claimant_customer_id":null,"claimant_service_id":null,"claimant_trip_id":null,"trip_ticket_id":36,"status":"pending","proposed_pickup_time":"2016-01-01T09:00:00Z","proposed_fare":null,"notes":null,"created_at":"2015-05-26T00:14:27Z","updated_at":"2015-05-26T00:14:27Z","claimant":{"id":2,"name":"Yahoo","primary_contact_email":"some@nights.fun","address":{"id":2,"address_1":"123
+        Main St","address_2":null,"city":"Portland","position":null,"state":"OR","zip":"97210","phone_number":null,"common_name":null,"jurisdiction":null,"created_at":"2015-05-13T21:00:15Z","updated_at":"2015-05-13T21:00:15Z"}}}'
+    http_version: 
+  recorded_at: Tue, 26 May 2015 00:14:27 GMT
+- request:
+    method: put
+    uri: http://localhost:3000/api/v1/trip_tickets/36/trip_claims/11/approve
+    body:
+      encoding: US-ASCII
+      string: api_key=fb3c85be27b6e810925d75b3d9f08f25&nonce=1432599267%3A2&timestamp=2015-05-25T20%3A14%3A27-04%3A00&hmac_digest=60da0d3b1ce9976e2f34fbc6ca08016e46711521
+    headers:
+      Accept:
+      - ! '*/*; q=0.5, application/xml'
+      Accept-Encoding:
+      - gzip, deflate
+      Content-Length:
+      - '156'
+      Content-Type:
+      - application/x-www-form-urlencoded
+      User-Agent:
+      - Ruby
+  response:
+    status:
+      code: 200
+      message: OK
+    headers:
+      Content-Type:
+      - application/json
+      Content-Length:
+      - '636'
+      X-Ua-Compatible:
+      - IE=Edge
+      Etag:
+      - ! '"eab9bab2153ec22598e54c37e2f8f46e"'
+      Cache-Control:
+      - max-age=0, private, must-revalidate
+      X-Request-Id:
+      - 4873423a2d49de396d37a4c67fd49f25
+      X-Runtime:
+      - '0.023936'
+      Connection:
+      - keep-alive
+      Server:
+      - thin 1.5.0 codename Knife
+    body:
+      encoding: US-ASCII
+      string: ! '{"id":11,"claimant_provider_id":2,"claimant_customer_id":null,"claimant_service_id":null,"claimant_trip_id":null,"trip_ticket_id":36,"status":"approved","proposed_pickup_time":"2016-01-01T09:00:00Z","proposed_fare":null,"notes":null,"created_at":"2015-05-26T00:14:27Z","updated_at":"2015-05-26T00:14:27Z","claimant":{"id":2,"name":"Yahoo","primary_contact_email":"some@nights.fun","address":{"id":2,"address_1":"123
+        Main St","address_2":null,"city":"Portland","position":null,"state":"OR","zip":"97210","phone_number":null,"common_name":null,"jurisdiction":null,"created_at":"2015-05-13T21:00:15Z","updated_at":"2015-05-13T21:00:15Z"}}}'
+    http_version: 
+  recorded_at: Tue, 26 May 2015 00:14:27 GMT
+- request:
+    method: get
+    uri: http://localhost:3000/api/v1/trip_tickets/sync?api_key=c8b6abce74cd58efd3b7d0a2045fbf85&hmac_digest=1e8f40939a79144c25aae0a154f8558e19bb852b&nonce=1432599267:1&timestamp=2015-05-25T20:14:27-04:00&updated_since=
+    body:
+      encoding: US-ASCII
+      string: ''
+    headers:
+      Accept:
+      - ! '*/*; q=0.5, application/xml'
+      Accept-Encoding:
+      - gzip, deflate
+      User-Agent:
+      - Ruby
+  response:
+    status:
+      code: 200
+      message: OK
+    headers:
+      Content-Type:
+      - application/json
+      Content-Length:
+      - '2121'
+      X-Ua-Compatible:
+      - IE=Edge
+      Etag:
+      - ! '"16b17c65f110001abe2b4cb960612961"'
+      Cache-Control:
+      - max-age=0, private, must-revalidate
+      X-Request-Id:
+      - b2d455b402d7821dc6c68b91156150c3
+      X-Runtime:
+      - '0.015326'
+      Connection:
+      - keep-alive
+      Server:
+      - thin 1.5.0 codename Knife
+    body:
+      encoding: US-ASCII
+      string: ! '[{"id":36,"status":"Active","rescinded":false,"origin_provider_id":1,"origin_customer_id":"222","origin_trip_id":0,"pick_up_location_id":null,"drop_off_location_id":null,"customer_address_id":null,"customer_first_name":"Bob","customer_last_name":"Smith","customer_middle_name":null,"customer_dob":"1955-02-01","customer_primary_phone":"222-333-4444","customer_emergency_phone":null,"customer_primary_language":null,"customer_ethnicity":null,"customer_race":null,"customer_information_withheld":false,"customer_identifiers":{},"customer_notes":null,"customer_boarding_time":0,"customer_deboarding_time":0,"customer_seats_required":1,"customer_impairment_description":null,"customer_service_level":null,"customer_mobility_factors":null,"customer_service_animals":null,"customer_eligibility_factors":null,"num_attendants":0,"num_guests":0,"requested_pickup_time":"2000-01-01T09:00:00Z","earliest_pick_up_time":null,"appointment_time":"2016-01-01T09:00:00Z","requested_drop_off_time":"2000-01-01T13:00:00Z","trip_purpose_description":null,"trip_funders":null,"trip_notes":null,"scheduling_priority":"pickup","customer_gender":null,"estimated_distance":null,"additional_data":{},"time_window_before":-1,"time_window_after":-1,"created_at":"2015-05-26
+        00:14:27.426542","updated_at":"2015-05-26 00:14:27.699128","is_originator":false,"originator":{"id":1,"name":"Google","primary_contact_email":"some@nights.fun","address":{"id":1,"address_1":"123
+        Main St","address_2":null,"city":"Portland","position":null,"state":"OR","zip":"97210","phone_number":null,"common_name":null,"jurisdiction":null,"created_at":"2015-05-13T21:00:14Z","updated_at":"2015-05-13T21:00:14Z"}},"customer_address":null,"pick_up_location":null,"drop_off_location":null,"trip_result":null,"trip_claims":[{"id":11,"claimant_provider_id":2,"claimant_customer_id":null,"claimant_service_id":null,"claimant_trip_id":null,"trip_ticket_id":36,"status":"approved","proposed_pickup_time":"2016-01-01T09:00:00Z","proposed_fare":null,"notes":null,"created_at":"2015-05-26T00:14:27Z","updated_at":"2015-05-26T00:14:27Z","is_claimant":true}],"trip_ticket_comments":[]}]'
+    http_version: 
+  recorded_at: Tue, 26 May 2015 00:14:27 GMT
+- request:
+    method: put
+    uri: http://localhost:3000/api/v1/trip_tickets/36/rescind
+    body:
+      encoding: US-ASCII
+      string: api_key=fb3c85be27b6e810925d75b3d9f08f25&nonce=1432599267%3A3&timestamp=2015-05-25T20%3A14%3A27-04%3A00&hmac_digest=c10c1b31f1f87abff310733428ce20f7edc6a41a
+    headers:
+      Accept:
+      - ! '*/*; q=0.5, application/xml'
+      Accept-Encoding:
+      - gzip, deflate
+      Content-Length:
+      - '156'
+      Content-Type:
+      - application/x-www-form-urlencoded
+      User-Agent:
+      - Ruby
+  response:
+    status:
+      code: 200
+      message: OK
+    headers:
+      Content-Type:
+      - application/json
+      Content-Length:
+      - '2533'
+      X-Ua-Compatible:
+      - IE=Edge
+      Etag:
+      - ! '"78d2fc48233dcef33acdbd2609da9d15"'
+      Cache-Control:
+      - max-age=0, private, must-revalidate
+      X-Request-Id:
+      - 5258fa80abd004ef998a02f1c474c686
+      X-Runtime:
+      - '0.050685'
+      Connection:
+      - keep-alive
+      Server:
+      - thin 1.5.0 codename Knife
+    body:
+      encoding: US-ASCII
+      string: ! '{"id":36,"status":"Rescinded","rescinded":true,"origin_provider_id":1,"origin_customer_id":"222","origin_trip_id":0,"pick_up_location_id":null,"drop_off_location_id":null,"customer_address_id":null,"customer_first_name":"Bob","customer_last_name":"Smith","customer_middle_name":null,"customer_dob":"1955-02-01","customer_primary_phone":"222-333-4444","customer_emergency_phone":null,"customer_primary_language":null,"customer_ethnicity":null,"customer_race":null,"customer_information_withheld":false,"customer_identifiers":{},"customer_notes":null,"customer_boarding_time":0,"customer_deboarding_time":0,"customer_seats_required":1,"customer_impairment_description":null,"customer_service_level":null,"customer_mobility_factors":null,"customer_service_animals":null,"customer_eligibility_factors":null,"num_attendants":0,"num_guests":0,"requested_pickup_time":"2000-01-01T09:00:00Z","earliest_pick_up_time":null,"appointment_time":"2016-01-01T09:00:00Z","requested_drop_off_time":"2000-01-01T13:00:00Z","trip_purpose_description":null,"trip_funders":null,"trip_notes":null,"scheduling_priority":"pickup","customer_gender":null,"estimated_distance":null,"additional_data":{},"time_window_before":-1,"time_window_after":-1,"created_at":"2015-05-26
+        00:14:27.426542","updated_at":"2015-05-26 00:14:27.799860","originator":{"id":1,"name":"Google","primary_contact_email":"some@nights.fun","address":{"id":1,"address_1":"123
+        Main St","address_2":null,"city":"Portland","position":null,"state":"OR","zip":"97210","phone_number":null,"common_name":null,"jurisdiction":null,"created_at":"2015-05-13T21:00:14Z","updated_at":"2015-05-13T21:00:14Z"}},"customer_address":null,"pick_up_location":null,"drop_off_location":null,"trip_result":{"id":3,"actual_drop_off_time":null,"actual_pick_up_time":null,"base_fare":null,"billable_mileage":null,"driver_id":null,"extra_securement_count":null,"fare":null,"fare_type":null,"miles_traveled":null,"odometer_end":null,"odometer_start":null,"outcome":"Cancelled","rate":null,"rate_type":null,"trip_claim_id":11,"trip_ticket_id":36,"vehicle_id":null,"vehicle_type":null,"notes":null,"created_at":"2015-05-26T00:14:27Z","updated_at":"2015-05-26T00:14:27Z"},"trip_claims":[{"id":11,"claimant_provider_id":2,"claimant_customer_id":null,"claimant_service_id":null,"claimant_trip_id":null,"trip_ticket_id":36,"status":"approved","proposed_pickup_time":"2016-01-01T09:00:00Z","proposed_fare":null,"notes":null,"created_at":"2015-05-26T00:14:27Z","updated_at":"2015-05-26T00:14:27Z"}],"trip_ticket_comments":[]}'
+    http_version: 
+  recorded_at: Tue, 26 May 2015 00:14:27 GMT
+- request:
+    method: get
+    uri: http://localhost:3000/api/v1/trip_tickets/sync?api_key=c8b6abce74cd58efd3b7d0a2045fbf85&hmac_digest=4aaeff894f55f024d7b1c919d3bcddb552fd9645&nonce=1432599267:2&timestamp=2015-05-25T20:14:27-04:00&updated_since=2015-05-26%2000:14:27.699128
+    body:
+      encoding: US-ASCII
+      string: ''
+    headers:
+      Accept:
+      - ! '*/*; q=0.5, application/xml'
+      Accept-Encoding:
+      - gzip, deflate
+      User-Agent:
+      - Ruby
+  response:
+    status:
+      code: 200
+      message: OK
+    headers:
+      Content-Type:
+      - application/json
+      Content-Length:
+      - '2576'
+      X-Ua-Compatible:
+      - IE=Edge
+      Etag:
+      - ! '"839ac761a15107d8962f58a387687e6d"'
+      Cache-Control:
+      - max-age=0, private, must-revalidate
+      X-Request-Id:
+      - e8ff3b1ffcf85bde4f79916ceb3abc87
+      X-Runtime:
+      - '0.015521'
+      Connection:
+      - keep-alive
+      Server:
+      - thin 1.5.0 codename Knife
+    body:
+      encoding: US-ASCII
+      string: ! '[{"id":36,"status":"Rescinded","rescinded":true,"origin_provider_id":1,"origin_customer_id":"222","origin_trip_id":0,"pick_up_location_id":null,"drop_off_location_id":null,"customer_address_id":null,"customer_first_name":"Bob","customer_last_name":"Smith","customer_middle_name":null,"customer_dob":"1955-02-01","customer_primary_phone":"222-333-4444","customer_emergency_phone":null,"customer_primary_language":null,"customer_ethnicity":null,"customer_race":null,"customer_information_withheld":false,"customer_identifiers":{},"customer_notes":null,"customer_boarding_time":0,"customer_deboarding_time":0,"customer_seats_required":1,"customer_impairment_description":null,"customer_service_level":null,"customer_mobility_factors":null,"customer_service_animals":null,"customer_eligibility_factors":null,"num_attendants":0,"num_guests":0,"requested_pickup_time":"2000-01-01T09:00:00Z","earliest_pick_up_time":null,"appointment_time":"2016-01-01T09:00:00Z","requested_drop_off_time":"2000-01-01T13:00:00Z","trip_purpose_description":null,"trip_funders":null,"trip_notes":null,"scheduling_priority":"pickup","customer_gender":null,"estimated_distance":null,"additional_data":{},"time_window_before":-1,"time_window_after":-1,"created_at":"2015-05-26
+        00:14:27.426542","updated_at":"2015-05-26 00:14:27.827705","is_originator":false,"originator":{"id":1,"name":"Google","primary_contact_email":"some@nights.fun","address":{"id":1,"address_1":"123
+        Main St","address_2":null,"city":"Portland","position":null,"state":"OR","zip":"97210","phone_number":null,"common_name":null,"jurisdiction":null,"created_at":"2015-05-13T21:00:14Z","updated_at":"2015-05-13T21:00:14Z"}},"customer_address":null,"pick_up_location":null,"drop_off_location":null,"trip_result":{"id":3,"actual_drop_off_time":null,"actual_pick_up_time":null,"base_fare":null,"billable_mileage":null,"driver_id":null,"extra_securement_count":null,"fare":null,"fare_type":null,"miles_traveled":null,"odometer_end":null,"odometer_start":null,"outcome":"Cancelled","rate":null,"rate_type":null,"trip_claim_id":11,"trip_ticket_id":36,"vehicle_id":null,"vehicle_type":null,"notes":null,"created_at":"2015-05-26T00:14:27Z","updated_at":"2015-05-26T00:14:27Z"},"trip_claims":[{"id":11,"claimant_provider_id":2,"claimant_customer_id":null,"claimant_service_id":null,"claimant_trip_id":null,"trip_ticket_id":36,"status":"approved","proposed_pickup_time":"2016-01-01T09:00:00Z","proposed_fare":null,"notes":null,"created_at":"2015-05-26T00:14:27Z","updated_at":"2015-05-26T00:14:27Z","is_claimant":true}],"trip_ticket_comments":[]}]'
+    http_version: 
+  recorded_at: Tue, 26 May 2015 00:14:27 GMT
+recorded_with: VCR 2.5.0

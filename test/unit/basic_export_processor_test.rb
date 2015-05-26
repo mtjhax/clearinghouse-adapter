@@ -68,6 +68,7 @@ describe ExportProcessor do
     }
     @big_ticket_hash = {
       "id" => 80,
+      "status" => "Active",
       "rescinded" => false,
       "origin_provider_id" => 2,
       "origin_customer_id" => "4717",
@@ -195,6 +196,11 @@ describe ExportProcessor do
         csv_data = read_csv(@export_folder, "trip_tickets.timestamp.csv")
         csv_row = csv_data.first
         @flattened_hash = HashWithIndifferentAccess[csv_row.headers.zip(csv_row.fields)]
+      end
+
+      it "outputs status attribute" do
+        @flattened_hash.keys.must_include "status"
+        @flattened_hash["status"].must_equal "Active"
       end
 
       it "flattens location hashes by concatenating the keys together" do

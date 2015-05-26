@@ -66,17 +66,22 @@ class AdapterSync
     
   def initialize(opts = nil)
     @logger = Logger.new(LOG_FILE, 'weekly')
-    @options = opts || load_config(CONFIG_FILE)
+
+    # support passing database and API configuration in params, opts[:database] and opts[:api]
+    db_opts = opts.try(:delete, :database)
+    api_opts = opts.try(:delete, :api)
+
+    @options = load_config(CONFIG_FILE, opts)
 
     @errors, @exported_trips, @imported_trips = [[], [], []]
 
     # open the database, creating it if necessary, and make sure up to 
     # date with latest migrations
-    @connection = ActiveRecordConnection.new(logger, load_config(DB_CONFIG_FILE)[ENV["ADAPTER_ENV"]])
+    @connection = ActiveRecordConnection.new(logger, load_config(DB_CONFIG_FILE, db_opts, ENV["ADAPTER_ENV"]))
     @connection.migrate(MIGRATIONS_DIR)
 
     # create connection to the Clearinghouse API
-    apiconfig = load_config(API_CONFIG_FILE)[ENV["ADAPTER_ENV"]]
+    apiconfig = load_config(API_CONFIG_FILE, api_opts, ENV["ADAPTER_ENV"])
     apiconfig['raw'] = false
     @clearinghouse = ApiClient.new(apiconfig)
     
@@ -256,8 +261,9 @@ class AdapterSync
     end
   end
 
-  def load_config(file)
-    (YAML::load(File.open(file)) || {}).with_indifferent_access
+  def load_config(file, additional_options = {}, environment = nil)
+    config = (YAML::load(File.open(file)) || {})
+    (environment && config[environment] || config).merge(additional_options || {})
   end
 
   def report_errors(error_message, errors)

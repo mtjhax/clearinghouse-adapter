@@ -41,15 +41,15 @@ class TripTicket < ActiveRecord::Base
   end
 
   def claims
-    ch_data_hash.trip_claims
+    ch_data_hash.try(:[], :trip_claims)
   end
 
   def result
-    ch_data_hash.trip_result
+    ch_data_hash.try(:[], :trip_result)
   end
 
   def comments
-    ch_data_hash.trip_ticket_comments
+    ch_data_hash.try(:[], :trip_ticket_comments)
   end
 
 end
