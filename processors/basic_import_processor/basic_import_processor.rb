@@ -19,7 +19,7 @@ require 'active_support/core_ext/hash'
 require 'active_support/time_with_zone'
 require 'import_processor'
 require 'sqlite3'
-require_relative 'csv_import'
+require 'csv_import'
 require_relative 'imported_file'
 
 Time.zone = "UTC"
