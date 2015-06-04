@@ -23,9 +23,6 @@ require 'sqlite3'
 require 'csv_import'
 require_relative 'imported_file'
 
-BLOW THE HELL UP!!!!!
-
-
 Time.zone = "UTC"
 
 class ImportProcessor < Processor::Import::Base
