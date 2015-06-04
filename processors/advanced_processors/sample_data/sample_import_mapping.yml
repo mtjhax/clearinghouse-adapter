@@ -1,0 +1,192 @@
+---
+:__accept_unmapped__: true
+:clearinghouse_trip_id: :ch_id
+:trip_id: :origin_trip_id
+:provider:
+  :ignore: true
+:customer_id: :origin_customer_id
+:customer_middle_initial: :customer_middle_name
+:customer_home_address_id:
+  :ignore: true
+:customer_home_address_type:
+- :customer_address_attributes
+- :address_type
+:customer_home_telephone:
+  :prepend:
+  - - :customer_address_attributes
+    - :phone_number
+  - ' '
+:customer_home_telephone_extension:
+  :append:
+  - - :customer_address_attributes
+    - :phone_number
+  - ' '
+:customer_home_common_name:
+- :customer_address_attributes
+- :common_name
+:customer_home_address_1:
+- :customer_address_attributes
+- :address_1
+:customer_home_address_2:
+- :customer_address_attributes
+- :address_2
+:customer_home_city:
+- :customer_address_attributes
+- :city
+:customer_home_jurisdiction:
+- :customer_address_attributes
+- :jurisdiction
+:customer_home_state:
+- :customer_address_attributes
+- :state
+:customer_home_zip:
+- :customer_address_attributes
+- :zip
+:customer_home_latitude:
+- :customer_address_attributes
+- :latitude
+:customer_home_longitude:
+- :customer_address_attributes
+- :longitude
+:customer_sex: :customer_gender
+:customer_external_id:
+  :key_values:
+  - :customer_identifiers
+  - ','
+  - :customer_external_id
+:customer_load_time:
+  :and:
+  - :customer_boarding_time
+  - :customer_deboarding_time
+:customer_mobility_requirement: :customer_service_level
+:customer_assistance_needs:
+  :list:
+  - :customer_mobility_factors
+  - '|'
+:customer_eligibility:
+  :list:
+  - :customer_eligibility_factors
+  - '|'
+:pickup_address_id:
+  :ignore: true
+:pickup_address_type:
+- :pick_up_location_attributes
+- :address_type
+:pickup_telephone:
+  :prepend:
+  - - :pick_up_location_attributes
+    - :phone_number
+  - ' '
+:pickup_telephone_extension:
+  :append:
+  - - :pick_up_location_attributes
+    - :phone_number
+  - ' '
+:pickup_common_name:
+- :pick_up_location_attributes
+- :common_name
+:pickup_address_1:
+- :pick_up_location_attributes
+- :address_1
+:pickup_address_2:
+- :pick_up_location_attributes
+- :address_2
+:pickup_city:
+- :pick_up_location_attributes
+- :city
+:pickup_jurisdiction:
+- :pick_up_location_attributes
+- :jurisdiction
+:pickup_state:
+- :pick_up_location_attributes
+- :state
+:pickup_zip:
+- :pick_up_location_attributes
+- :zip
+:pickup_latitude:
+- :pick_up_location_attributes
+- :latitude
+:pickup_longitude:
+- :pick_up_location_attributes
+- :longitude
+:drop_off_address_id:
+  :ignore: true
+:drop_off_address_type:
+- :drop_off_location_attributes
+- :address_type
+:drop_off_telephone:
+  :prepend:
+  - - :drop_off_location_attributes
+    - :phone_number
+  - ' '
+:drop_off_telephone_extension:
+  :append:
+  - - :drop_off_location_attributes
+    - :phone_number
+  - ' '
+:drop_off_common_name:
+- :drop_off_location_attributes
+- :common_name
+:drop_off_address_1:
+- :drop_off_location_attributes
+- :address_1
+:drop_off_address_2:
+- :drop_off_location_attributes
+- :address_2
+:drop_off_city:
+- :drop_off_location_attributes
+- :city
+:drop_off_jurisdiction:
+- :drop_off_location_attributes
+- :jurisdiction
+:drop_off_state:
+- :drop_off_location_attributes
+- :state
+:drop_off_zip:
+- :drop_off_location_attributes
+- :zip
+:drop_off_latitude:
+- :drop_off_location_attributes
+- :latitude
+:drop_off_longitude:
+- :drop_off_location_attributes
+- :longitude
+:requested_pickup_date:
+  :ignore: true
+:requested_pickup_time: true
+:requested_drop_off_date:
+  :ignore: true
+:requested_drop_off_time:
+  :and:
+  - :requested_drop_off_time
+  - :appointment_time
+:early_window: :time_window_before
+:late_window: :time_window_after
+:timing_preference: :scheduling_priority
+:trip_purpose: :trip_purpose_description
+:trip_funding_source:
+  :list:
+  - :trip_funders
+  - '|'
+:estimated_trip_distance: :estimated_distance
+:outcome:
+- :trip_result_attributes
+:actual_pickup_time:
+- :trip_result_attributes
+- :actual_pick_up_time
+:actual_drop_off_time:
+- :trip_result_attributes
+:fare:
+- :trip_result_attributes
+:fare_type:
+- :trip_result_attributes
+:odometer_start:
+- :trip_result_attributes
+:odometer_end:
+- :trip_result_attributes
+:driver_name:
+- :trip_result_attributes
+- :driver_id
+:vehicle_name:
+- :trip_result_attributes
+- :vehicle_id
