@@ -1,8 +1,13 @@
 # Advanced Import/Export Processors
 
-These advanced processors can import and export data to custom formats with limits or no additional programming. To accomplish this, the data conversions are specified in a mapping configuration file.
+The advanced import and export processors can import and export data in custom formats with little or no additional programming.
+To accomplish this, the data conversions are specified in a mapping configuration file.
 
-The mapping configuration file is stored in YAML format. There is one mapping for importing and another for exporting, since data conversions are not always the same in both directions. Detailed examples are available in `processors\advanced_processors\sample_data`. Example mappings used in the Adapter tests are in `sample_import_mapping.yml` and `sample_export_mapping.yml`. The file `sample_mappings.rb` shows how to define mappings in Ruby that are slightly easier to edit manually and then export to YAML files.
+The mapping configuration file is stored in YAML format. There is one mapping for importing and another for exporting as
+data conversions are not always the same in both directions. Detailed examples are available in
+`processors\advanced_processors\sample_data`. Example mappings used in the Adapter tests are in
+`sample_import_mapping.yml` and `sample_export_mapping.yml`. The file `sample_mappings.rb` shows how to define mappings
+in Ruby that are slightly easier to edit manually and then export to YAML files.
 ### Configuration
 To use these as your processors, update your `adapter_sync.yml` configuration file to look something like the following:
 ```yaml
@@ -53,6 +58,7 @@ The import mapping is a Ruby hash (as expressed in YAML) containing the names of
   # e.g. {input_attr: {command: [ parameters ]}}
   # The possible commands are listed in the following section.
   middle_name: { truncate: [:middle_initial, 1] }
+}
 ```
 ### Transformation Commands
 In all transformation commands, wherever an attribute name can be specified, an array can be used to place the result in a nested hash of the output.
@@ -95,7 +101,8 @@ In all transformation commands, wherever an attribute name can be specified, an 
 
 ### OR
 * `Parameters: attribute_name`
-* Copies input to the output attribute unless the output attribute already has a value. ```
+* Copies input to the output attribute unless the output attribute already has a value.
+```
 {
   day_phone: { or: :phone_number },
   evening_pphone: { or: :phone_number }
