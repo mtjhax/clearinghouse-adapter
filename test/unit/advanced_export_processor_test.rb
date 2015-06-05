@@ -20,9 +20,16 @@ require_relative '../../processors/advanced_processors/advanced_export_processor
 describe ExportProcessor do
   include FileHelpers
 
-  TEST_MAPPING_CONFIGURATION = 'processors/advanced_processors/sample_data/sample_export_mapping.yml'
-
   before do
+    @export_folder = 'tmp/_export_test'
+    FileUtils.mkpath @export_folder
+
+    @options = {
+      export_folder: @export_folder,
+      mapping_file: 'processors/advanced_processors/sample_data/sample_export_mapping.yml'
+    }
+    @export_processor = ExportProcessor.new(nil, @options)
+
     @trip_result = {
       "actual_drop_off_time" => "2000-01-01T02:45:00Z",
       "actual_pick_up_time" => "2000-01-01T02:45:00Z",
@@ -165,12 +172,6 @@ describe ExportProcessor do
       "trip_claims" => [@trip_claim],
       "trip_ticket_comments" => [@trip_ticket_comment]
     }
-
-    @export_folder = 'tmp/_export_test'
-    FileUtils.mkpath @export_folder
-    
-    @options = { export_folder: @export_folder, mapping_file: TEST_MAPPING_CONFIGURATION }
-    @export_processor = ExportProcessor.new(nil, @options)
   end
   
   after do

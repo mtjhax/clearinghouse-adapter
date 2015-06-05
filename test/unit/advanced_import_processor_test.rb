@@ -19,15 +19,17 @@ require_relative '../../processors/advanced_processors/advanced_import_processor
 describe ImportProcessor do
   include FileHelpers
 
-  TEST_MAPPING_CONFIGURATION = 'processors/advanced_processors/sample_data/sample_import_mapping.yml'
-
   before do
     @input_folder = 'tmp/_import_test'
     @output_folder = 'tmp/_import_test_out'
     FileUtils.mkpath @input_folder
     FileUtils.mkpath @output_folder
 
-    @options = { import_folder: @input_folder, completed_folder: @output_folder, mapping_file: TEST_MAPPING_CONFIGURATION }
+    @options = {
+      import_folder: @input_folder,
+      completed_folder: @output_folder,
+      mapping_file: 'processors/advanced_processors/sample_data/sample_import_mapping.yml'
+    }
     @import_processor = ImportProcessor.new(nil, @options)
 
     DatabaseCleaner[:active_record, {model: ImportedFile}].clean_with(:truncation)
