@@ -1,4 +1,4 @@
-# Copyright 2013 Ride Connection
+# Copyright 2013, 2015 Ride Connection
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -19,11 +19,23 @@ require 'csv'
 require 'export_processor'
 require 'processors/processor_helpers'
 require 'fileutils'
+require_relative 'processor_mapping'
 
 Time.zone = "UTC"
 
 class ExportProcessor < Processor::Export::Base
   include Processors::ProcessorHelper
+
+  attr_accessor :mapping
+
+  def initialize(logger = nil, options = {})
+    super
+
+    # NOTE the advanced export processor wants a mapping configuration with three sub-mappings:
+    # :trip_ticket, :trip_claim, and :trip_comment (trip results fields are included in trip ticket mapping)
+    raise RuntimeError, "Mapping configuration file not specified" if options[:mapping_file].blank?
+    self.mapping = Processors::AdvancedProcessors::ProcessorMapping.new(options[:mapping_file])
+  end
 
   def process(exported_trips)
     export_dir = @options[:export_folder]
@@ -33,7 +45,7 @@ class ExportProcessor < Processor::Export::Base
     trip_updates, claim_updates, comment_updates, result_updates = [[], [], [], []]
     exported_trips.each do |trip|
       trip_data = trip.with_indifferent_access
-      
+
       # pluck the modifications to claims, comments, and results out
       # of the trip to report them separately
       claims = trip_data.delete(:trip_claims) || []
@@ -49,14 +61,26 @@ class ExportProcessor < Processor::Export::Base
       claims.each { |claim| claim_updates << claim }
       comments.each { |comment| comment_updates << comment }
       result_updates << result unless result.blank?
-    end    
-    
+    end
+
     # flatten nested structures in the updated trips
+    #
+    # NOTE: any array or hstore attribute that uses advanced mapping does not need to be flattened,
+    # because the mapping will do something different with it (most likely collect it into a single,
+    # parseable attribute) so each call to flatten_hash will skip mapped attributes
+    #
     flattened_trips, flattened_claims, flattened_comments, flattened_results = [[], [], [], []]
-    trip_updates.each { |x| flattened_trips << flatten_hash(x) }
-    claim_updates.each { |x| flattened_claims << flatten_hash(x) }
-    comment_updates.each { |x| flattened_comments << flatten_hash(x) }
-    result_updates.each { |x| flattened_results << flatten_hash(x) }
+    trip_updates.each { |x| flattened_trips << flatten_hash(x, mapping.keys(:trip_ticket)) }
+    claim_updates.each { |x| flattened_claims << flatten_hash(x, mapping.keys(:trip_claim)) }
+    comment_updates.each { |x| flattened_comments << flatten_hash(x, mapping.keys(:trip_comment)) }
+    result_updates.each { |x| flattened_results << flatten_hash(x, mapping.keys(:trip_result)) }
+
+    # ADVANCED PROCESSING
+    # run each of trips, claims, comments, and results through export mapping
+    flattened_trips = flattened_trips.map {|row| mapping.map_inputs(row, :trip_ticket) }
+    flattened_claims = flattened_claims.map {|row| mapping.map_inputs(row, :trip_claim) }
+    flattened_comments = flattened_comments.map {|row| mapping.map_inputs(row, :trip_comment) }
+    flattened_results = flattened_results.map {|row| mapping.map_inputs(row, :trip_result) }
 
     # create combined lists of keys since each change set can include
     # different updated columns

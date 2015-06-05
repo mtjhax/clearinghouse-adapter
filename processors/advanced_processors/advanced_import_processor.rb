@@ -1,4 +1,4 @@
-# Copyright 2013 Ride Connection
+# Copyright 2013, 2015 Ride Connection
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -12,6 +12,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+# This is an advanced import processor that is based on the Basic Import Processor, but
+# also supports a mapping configuration file. The mapping configuration allows complex
+# conversion of imported and exported data to match provider system requirements: mapping
+# to different attribute names, splitting and joining fields, parsing separators into
+# array and key-value lists, and setting values in associated tables.
+#
+# See processor_mapping.rb for mapping configuration file specifications
+
 require 'active_record'
 require 'active_record_connection'
 require 'active_support/core_ext/object'
@@ -22,17 +30,23 @@ require 'processors/processor_helpers'
 require 'sqlite3'
 require 'csv_import'
 require_relative 'imported_file'
+require_relative 'processor_mapping'
 
 Time.zone = "UTC"
 
 class ImportProcessor < Processor::Import::Base
   include Processors::ProcessorHelper
 
+  attr_accessor :mapping
+
   def initialize(logger = nil, options = {})
     super
     setup_import_database
+
+    raise RuntimeError, "Mapping configuration file not specified" if options[:mapping_file].blank?
+    self.mapping = Processors::AdvancedProcessors::ProcessorMapping.new(options[:mapping_file])
   end
-  
+
   def process
     import_dir = options[:import_folder]
     raise RuntimeError, "Import folder not configured, will not check for files to import" if import_dir.blank?
@@ -63,13 +77,16 @@ class ImportProcessor < Processor::Import::Base
     end    
     
     trip_data.collect do |row|
+      # does custom mapping of inputs based on mapping configuration
+      row = mapping.map_inputs(row)
+      # then does all of the normal conversions and nesting of flattened attributes
       handle_nested_objects!(row)
       handle_array_and_hstore_attributes!(row)
       handle_date_conversions!(row)
       row
     end
   end
-  
+
   # imported_rows, skipped_rows, and unposted_rows may contain data that
   # is useful in some circumstances, but we are ignoring it.
   def finalize(imported_rows = [], skipped_rows = [], unposted_rows =[])
@@ -104,7 +121,7 @@ class ImportProcessor < Processor::Import::Base
     end
     
     ActiveRecord::Base.establish_connection ImportedFile::CONNECTION_SPEC
-    ActiveRecord::Migrator.migrate(File.join(File.expand_path(File.dirname(__FILE__)), 'basic_import_processor', 'migrations'))
+    ActiveRecord::Migrator.migrate(File.join(File.expand_path(File.dirname(__FILE__)), 'migrations'))
     
     if old_spec.present?
       ActiveRecord::Base.establish_connection old_spec
