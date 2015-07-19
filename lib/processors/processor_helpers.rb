@@ -14,7 +14,7 @@
 
 # This module includes helper functions for manipulating import and export data
 
-require 'active_support/core_ext'
+require 'active_support'
 
 module Processors
   module ProcessorHelper

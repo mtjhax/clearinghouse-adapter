@@ -1,4 +1,4 @@
-# Copyright 2013, 2015 Ride Connection
+# Copyright 2015 Ride Connection
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -69,39 +69,31 @@ class ExportProcessor < Processor::Export::Base
     # because the mapping will do something different with it (most likely collect it into a single,
     # parseable attribute) so each call to flatten_hash will skip mapped attributes
     #
-    flattened_trips, flattened_claims, flattened_comments, flattened_results = [[], [], [], []]
-    trip_updates.each { |x| flattened_trips << flatten_hash(x, mapping.keys(:trip_ticket)) }
-    claim_updates.each { |x| flattened_claims << flatten_hash(x, mapping.keys(:trip_claim)) }
-    comment_updates.each { |x| flattened_comments << flatten_hash(x, mapping.keys(:trip_comment)) }
-    result_updates.each { |x| flattened_results << flatten_hash(x, mapping.keys(:trip_result)) }
+    {
+      trip_updates: :trip_ticket,
+      claim_updates: :trip_claim,
+      comment_updates: :trip_comment,
+      result_updates: :trip_result
+    }.each do |rows, type_key|
+      # flatten sub-hashes in the data by joining key values with underscores
+      # e.g. row[primary][secondary] becomes row[primary_secondary]
+      flattened_rows = []
+      eval(rows.to_s).each { |x| flattened_rows << flatten_hash(x, mapping.keys(type_key)) }
 
-    # ADVANCED PROCESSING
-    # run each of trips, claims, comments, and results through export mapping
-    flattened_trips = flattened_trips.map {|row| mapping.map_inputs(row, :trip_ticket) }
-    flattened_claims = flattened_claims.map {|row| mapping.map_inputs(row, :trip_claim) }
-    flattened_comments = flattened_comments.map {|row| mapping.map_inputs(row, :trip_comment) }
-    flattened_results = flattened_results.map {|row| mapping.map_inputs(row, :trip_result) }
+      # ADVANCED PROCESSING - run each row through export mapping
+      flattened_rows = flattened_rows.map {|row| mapping.map_inputs(row, type_key) }
 
-    # create combined lists of keys since each change set can include
-    # different updated columns
-    trip_keys, claim_keys, comment_keys, result_keys = [[], [], [], []]
-    flattened_trips.each { |x| trip_keys |= x.stringify_keys.keys }
-    flattened_claims.each { |x| claim_keys |= x.stringify_keys.keys }
-    flattened_comments.each { |x| comment_keys |= x.stringify_keys.keys }
-    flattened_results.each { |x| result_keys |= x.stringify_keys.keys }
+      # create combined lists of keys since each change set can include different updated columns
+      row_keys = []
+      flattened_rows.each { |x| row_keys |= x.stringify_keys.keys }
 
-    # create file names for exports
-    timestamp = timestamp_string
-    trip_file = File.join(export_dir, "trip_tickets.#{timestamp}.csv")
-    claim_file = File.join(export_dir, "trip_claims.#{timestamp}.csv")
-    comment_file = File.join(export_dir, "trip_ticket_comments.#{timestamp}.csv")
-    result_file = File.join(export_dir, "trip_results.#{timestamp}.csv")
+      # create file name for exports
+      timestamp = timestamp_string
+      output_file = File.join(export_dir, "#{type_key.to_s.sub('comment', 'ticket_comment')}s.#{timestamp}.csv")
 
-    # export to CSV
-    export_csv(trip_file, trip_keys, flattened_trips)
-    export_csv(claim_file, claim_keys, flattened_claims)
-    export_csv(comment_file, comment_keys, flattened_comments)
-    export_csv(result_file, result_keys, flattened_results)
+      # export to CSV
+      export_csv(output_file, row_keys, flattened_rows)
+    end
   end
 
 end
