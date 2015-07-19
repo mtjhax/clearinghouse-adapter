@@ -1,4 +1,4 @@
-# Copyright 2013 Ride Connection
+# Copyright 2015 Ride Connection
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -267,7 +267,7 @@ describe AdapterSync do
     it "uses origin_trip_id and appointment_time to find trips that are already being tracked" do
       stub_result = ApiClient.new.tap {|result| result[:id] = 1379 }
       ApiClient.any_instance.stubs(:post).returns(stub_result)
-      TripTicket.expects(:find_or_create_by_origin_trip_id_and_appointment_time).with(@minimum_trip_attributes[:origin_trip_id], @minimum_trip_attributes[:appointment_time]).returns(TripTicket.new)
+      TripTicket.expects(:find_or_create_by).with(origin_trip_id: @minimum_trip_attributes[:origin_trip_id], appointment_time: @minimum_trip_attributes[:appointment_time]).returns(TripTicket.new)
       @adapter.import_tickets
     end
   

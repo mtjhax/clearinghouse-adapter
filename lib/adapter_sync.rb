@@ -1,4 +1,4 @@
-# Copyright 2013 Ride Connection
+# Copyright 2015 Ride Connection
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -141,7 +141,7 @@ class AdapterSync
         @errors << "A trip ticket from the local system did not contain an origin_trip_id value. It will not be imported."
         skipped_rows << trip_hash
       else
-        adapter_trip = TripTicket.find_or_create_by_origin_trip_id_and_appointment_time(trip_hash[:origin_trip_id], Time.zone.parse(trip_hash[:appointment_time]))
+        adapter_trip = TripTicket.find_or_create_by(origin_trip_id: trip_hash[:origin_trip_id], appointment_time: Time.zone.parse(trip_hash[:appointment_time]))
 
         unless adapter_trip.synced?
           api_result = post_new_trip(trip_hash)

@@ -1,4 +1,4 @@
-# Copyright 2013 Ride Connection
+# Copyright 2015 Ride Connection
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -64,10 +64,10 @@ class AdapterNotification
   end
 end
 
-opts = Slop.parse do
-  banner 'Usage: adapter_monitor_notification.rb [options]'
-  on :a, :auto, 'Send email and exit ', argument: :optional
-  on :e, :error=, 'Error description', argument: :optional
+opts = Slop.parse do |o|
+  o.banner = 'Usage: adapter_monitor_notification.rb [options]'
+  o.on :a, :auto, 'Send email and exit ', argument: :optional
+  o.on :e, :error=, 'Error description', argument: :optional
 end
 
 if opts.auto?
