@@ -20,21 +20,29 @@ require 'export_processor'
 require 'processors/processor_helpers'
 require 'fileutils'
 require_relative 'processor_mapping'
+require_relative 'normalization_rules'
 
 Time.zone = "UTC"
 
 class ExportProcessor < Processor::Export::Base
   include Processors::ProcessorHelper
 
-  attr_accessor :mapping
+  attr_accessor :mapping, :normalization_rules
 
   def initialize(logger = nil, options = {})
     super
 
     # NOTE the advanced export processor wants a mapping configuration with three sub-mappings:
     # :trip_ticket, :trip_claim, and :trip_comment (trip results fields are included in trip ticket mapping)
-    raise RuntimeError, "Mapping configuration file not specified" if options[:mapping_file].blank?
-    self.mapping = Processors::AdvancedProcessors::ProcessorMapping.new(options[:mapping_file])
+    raise RuntimeError, "Mapping configuration not specified" unless options[:mapping_file] || options[:mapping]
+    self.mapping = Processors::AdvancedProcessors::ProcessorMapping.new(options[:mapping_file] || options[:mapping])
+
+    # Normalization rules are optional
+    if options[:normalization_rules_file] || options[:normalization_rules]
+      self.normalization_rules = Processors::AdvancedProcessors::NormalizationRules.new(
+        options[:normalization_rules_file] || options[:normalization_rules]
+      )
+    end
   end
 
   def process(exported_trips)
@@ -80,20 +88,30 @@ class ExportProcessor < Processor::Export::Base
       flattened_rows = []
       eval(rows.to_s).each { |x| flattened_rows << flatten_hash(x, mapping.keys(type_key)) }
 
-      # ADVANCED PROCESSING - run each row through export mapping
+      # ADVANCED PROCESSING STEP 1 - run each row through export mapping
       flattened_rows = flattened_rows.map {|row| mapping.map_inputs(row, type_key) }
 
-      # create combined lists of keys since each change set can include different updated columns
-      row_keys = []
-      flattened_rows.each { |x| row_keys |= x.stringify_keys.keys }
-
-      # create file name for exports
-      timestamp = timestamp_string
-      output_file = File.join(export_dir, "#{type_key.to_s.sub('comment', 'ticket_comment')}s.#{timestamp}.csv")
+      # ADVANCED PROCESSING STEP 2 - normalize data values for each row
+      if normalization_rules.present?
+        flattened_rows = flattened_rows.map {|row| normalization_rules.normalize_inputs(row, type_key) }
+      end
 
       # export to CSV
-      export_csv(output_file, row_keys, flattened_rows)
+      export(flattened_rows, export_dir, type_key)
     end
+  end
+
+  def export(rows, export_dir, type_key)
+    # create combined lists of keys since each change set can include different updated columns
+    row_keys = []
+    rows.each { |x| row_keys |= x.stringify_keys.keys }
+
+    # create file name for exports
+    # note that historical name for trip comments output file does not follow convention of the others
+    timestamp = timestamp_string
+    output_file = File.join(export_dir, "#{type_key.to_s.sub('comment', 'ticket_comment')}s.#{timestamp}.csv")
+
+    export_csv(output_file, row_keys, rows)
   end
 
 end

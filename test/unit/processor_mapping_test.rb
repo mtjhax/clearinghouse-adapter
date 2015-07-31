@@ -24,8 +24,9 @@ describe Processors::AdvancedProcessors::ProcessorMapping do
     ProcessorMapping.new(mappings).mappings == mappings
   end
 
-  # TODO test loading mappings from a yaml file
-  #it 'can load mappings from a file'
+  it 'can load mappings from a file' do
+    ProcessorMapping.new('processors/advanced_processors/sample_data/sample_export_mapping.yml').mappings.wont_be_empty
+  end
 
   it 'saves unmapped inputs by default' do
     ProcessorMapping.new.map_inputs(abc: 123)[:abc].must_equal 123
