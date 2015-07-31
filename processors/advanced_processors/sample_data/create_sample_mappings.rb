@@ -12,13 +12,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# This is an example of advanced import and export processor mappings in Ruby format.
-# The actual mappings need to be stored in a YAML file (one can modify this
-# and generate the YAML with something like the following:
-#
-#     require 'sample_mappings'
-#     File.open('my_import_mapping.yml', 'w') {|f| f.write(SAMPLE_IMPORT_MAPPING.to_yaml) }
-#     File.open('my_export_mapping.yml', 'w') {|f| f.write(SAMPLE_EXPORT_MAPPING.to_yaml) }
+# This utility script generates an example of advanced import and export processor mappings
+# in YAML format, since it is easier to write them out in Ruby.
+
+require 'yaml'
 
 SAMPLE_IMPORT_MAPPING = {
   __accept_unmapped__:                true,
@@ -176,3 +173,11 @@ SAMPLE_EXPORT_MAPPING = {
     origin_trip_id:                     :trip_id
   }
 }
+
+File.open('processors/advanced_processors/sample_data/sample_import_mapping.yml', 'w') do |f|
+  f.write SAMPLE_IMPORT_MAPPING.to_yaml
+end
+
+File.open('processors/advanced_processors/sample_data/sample_export_mapping.yml', 'w') do |f|
+  f.write SAMPLE_EXPORT_MAPPING.to_yaml
+end

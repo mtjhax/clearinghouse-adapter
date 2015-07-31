@@ -1,0 +1,30 @@
+---
+:trip_ticket:
+  :customer_sex:
+    :normalizations:
+      M:
+      - m
+      - male
+      - man
+      F:
+      - f
+      - female
+      - woman
+    :output_attribute: :gender
+    :unmatched_action:
+    - :replace
+    - :gender
+    - U
+  :mobility_needs:
+    :normalizations:
+      wheelchair:
+      - wheel chair
+      - !ruby/regexp /wheel\s*chair/
+      scooter:
+      - mobility scooter
+      - !ruby/regexp /scooter/
+    :output_attribute: :mobility_requirement
+    :unmatched_action:
+    - :append
+    - :notes
+    - See notes field
