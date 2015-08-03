@@ -104,8 +104,9 @@ class ImportProcessor < Processor::Import::Base
     end
     
     ActiveRecord::Base.establish_connection ImportedFile::CONNECTION_SPEC
-    ActiveRecord::Migrator.migrate(File.join(File.expand_path(File.dirname(__FILE__)), 'basic_import_processor', 'migrations'))
-    
+    migrations_dir = File.join(File.expand_path(File.dirname(__FILE__)), 'migrations')
+    raise "BasicImportProcessor database migration folder not found: #{migrations_dir}" unless File.directory?(migrations_dir)
+    ActiveRecord::Migrator.migrate(migrations_dir)
     if old_spec.present?
       ActiveRecord::Base.establish_connection old_spec
     end
