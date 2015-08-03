@@ -15,6 +15,9 @@ gem 'win32-service', '~>0.8', platforms: [:mswin, :mingw]
 # gems needed by adapter_monitor_notification
 gem 'slop'
 
+# gem required for Windows
+gem 'tzinfo-data'
+
 group :test, :development do
   gem 'rake'
   gem 'minitest'
