@@ -20,17 +20,17 @@ require 'api_client'
 describe ApiClient do
 
   # the following values can be changed to match available data if a new VCR cassette needs to be recorded:
-  EXAMPLE_TRIP_ID = 1
+  EXAMPLE_TRIP_ID = 37
   NUM_COMMENTS = 2
-  EXAMPLE_COMMENT_ID = 2
-  EXAMPLE_USER_ID = 4
+  EXAMPLE_COMMENT_ID = 1
+  EXAMPLE_USER_ID = 15
 
   before do
     @api = ApiClient.new({
       api_base_url: 'http://localhost:3000/api',
       api_version: 'v1',
-      api_key: '3d0fdf48c058b1f43bb63da689d1f8bd',
-      api_private_key: '083ad201d16698b8bc945d8ddd2d759c'
+      api_key: 'fb3c85be27b6e810925d75b3d9f08f25',
+      api_private_key: '4a17d8b3437a16e0d526c5355449afef'
     })
     VCR.insert_cassette "api_client_test"
   end
