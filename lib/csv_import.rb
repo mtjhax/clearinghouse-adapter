@@ -24,9 +24,7 @@ class CsvImport
 
   def from_file(file)
     log "Importing #{file}"
-    csv = CSV.open(file, headers: true, return_headers: false)
-    data = csv.read
-    csv.close
+    data = CSV.read(file, headers: true, return_headers: false)
     data.collect{|row| HashWithIndifferentAccess[row.headers.zip(row.fields)]}
   end
 
@@ -57,7 +55,7 @@ class CsvImport
     end
     
     log "Directory import complete"
-    
+
     [results, data]
   end
 
