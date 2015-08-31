@@ -50,8 +50,8 @@ module FileHelpers
   end
 
   def remove_test_folders(*folders)
+    remove_test_files(*folders)
     folders.each do |f|
-      remove_test_files(*folders)
       FileUtils.rmdir f if File.exist?(f)
     end
   end

@@ -20,8 +20,8 @@ describe ImportProcessor do
   include FileHelpers
 
   before do
-    @input_folder = 'tmp/_import_test'
-    @output_folder = 'tmp/_import_test_out'
+    @input_folder = File.join 'tmp', '_import_test'
+    @output_folder = File.join  'tmp', '_import_test_out'
     FileUtils.mkpath @input_folder
     FileUtils.mkpath @output_folder
 
@@ -69,7 +69,7 @@ describe ImportProcessor do
         key_2: "hash_field_attribute_2",
       }
     end
-    
+
     it "raises a runtime error if import directory is not configured" do
       @import_processor.options[:import_folder] = nil
       Proc.new { @import_processor.process() }.must_raise(RuntimeError)
@@ -110,7 +110,7 @@ describe ImportProcessor do
       File.exist?(bad_csv).must_equal false
       File.exist?(File.join(bad_csv + '.error')).must_equal true
     end
-    
+
     it "keeps track of import errors" do
       bad_csv = create_illegal_csv(@input_folder, 'tracks_import_errors_tests.csv')
       @import_processor.process
@@ -175,7 +175,7 @@ describe ImportProcessor do
       results[0][:customer_dob].must_equal "02/01/1955"
     end
   end
-  
+
   describe "#finalize" do
     it "tracks imported files to prevent reimport" do
       file = 'tracks_imported_files_test.csv'
@@ -217,9 +217,9 @@ describe ImportProcessor do
       File.exist?(File.join(@output_folder, 'moves_processed_files.csv')).must_equal true
     end
   end
-  
+
   private
-  
+
   def convert_nested_object_hash_to_columns(hash, attribute_name)
     columns = {}
     hash.each do |k,v|
