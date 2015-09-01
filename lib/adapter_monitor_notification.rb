@@ -66,8 +66,12 @@ end
 
 opts = Slop.parse do |o|
   o.banner = 'Usage: adapter_monitor_notification.rb [options]'
-  o.on :a, :auto, 'Send email and exit ', argument: :optional
-  o.on :e, :error=, 'Error description', argument: :optional
+  o.bool '-a', '--auto', 'Send email and exit'
+  o.string '-e', '--error', 'Error description'
+  o.on '-h', '--help', 'Print this help' do
+    puts o
+    exit
+  end
 end
 
 if opts.auto?
