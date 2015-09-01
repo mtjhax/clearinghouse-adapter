@@ -27,6 +27,7 @@ system.
 -   Windows XP or later (Windows Server preferred).
 -   The Adapter software (provided as a `.zip` file).
 -   A program capable of opening `.zip` files (WinZip, WinRar, 7-Zip).
+-   Ruby 2.0.0 (see http://rubyinstaller.org/downloads/)
 
 ### Other
 
@@ -47,33 +48,15 @@ system.
     accessible by approved personnel.
 -   Disable automatic standby, hibernate, and screen savers other than
     screen power-saving on the PC.
+-   Install Ruby 2.0.0, make sure Ruby is in the path (if a new command
+    prompt is opened and `ruby -v` is typed, the response should be
+    something like `ruby 2.0.0p645 ...`
 
 ## Files
 
 Extract the Adapter software into a directory, preserving the .zip
 file’s subdirectories (`c:\adapter` is recommended and will be used in
 subsequent examples).
-
-Add `c:\adapter\ruby\bin` to your Windows PATH:
-
--   Open Start -\> Control Panel -\> System (may differ on other
-    versions of Windows, can also right-click on My Computer and select
-    Properties).
--   Click on the Advanced tab.
--   Click on Environment Variables.
--   In the System list, modify PATH to start with `c:\adapter\ruby\bin`
-    *(must be in System, not User, so the Windows Service that runs the
-    Adapter can see the PATH change).*
--   Reboot the computer so the PATH changes take effect.
--   If you have the Ruby programming language already installed on the
-    computer, it will no longer be accessible without restoring the
-    previous PATH temporarily.
-
-Open a new Windows Command Prompt.
-
-Verify that the PATH is correct by typing `gem -v` at the command 
-prompt. You should see a number similar to `1.8.24`. If you see a 
-command not found error, then the PATH is incorrect.
 
 Make sure the PC has an active Internet connection. The remaining steps
 will download and install additional required files.
@@ -322,7 +305,7 @@ own `initialize` method. In the rare case that you do, be sure to call
 `super` at the beginning of your own `initialize` method so that the
 inherited initializer is run first.
 
-All ExportProcessor instances must impliment a public `process` method.
+All ExportProcessor instances must implement a public `process` method.
 You can add as many supporting methods or modules as necessary, but the
 only one that will be called by the adapter is the `process` method.
 
@@ -442,7 +425,7 @@ own `initialize` method. In the rare case that you do, be sure to call
 `super` at the beginning of your own `initialize` method so that the
 inherited initializer is run first.
 
-All ImportProcessor instances must impliment **two** public methods:
+All ImportProcessor instances must implement **two** public methods:
 `process` and `finalize`, You can add as many supporting methods or
 modules as necessary, but only those two methods will be called by the
 adapter.
@@ -591,6 +574,12 @@ informational purposes. The `@errors` variable is an array (initially
 empty), which you can assign any error messages that you would like to
 be sent to system admins after both the `process` and `finalize`
 methods have been called as part of the AdapterSync process.
+
+### Advanced Processors
+
+The Advanced Processors can be configured to import and export files
+that are compatible with a many different transportation systems.
+See `processors/advanced_processors/README.md` for more details.
 
 ## Step 4: Sending data back to the Clearinghouse API
 
