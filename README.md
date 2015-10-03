@@ -19,15 +19,19 @@ system.
 
 ### Hardware
 
--   PC capable of running Windows XP or later.
+-   PC capable of running Windows 7 or later.
 -   Continuous Internet connection (high-speed Internet recommended).
 
 ### Software
 
--   Windows XP or later (Windows Server preferred).
+-   Windows 7 or later (the Adapter has been successfully tested with
+    Windows XP using Ruby 2.0.0, but Windows 7 or later with Ruby 2.1.x
+    is highly recommended).
 -   The Adapter software (provided as a `.zip` file).
 -   A program capable of opening `.zip` files (WinZip, WinRar, 7-Zip).
--   Ruby 2.0.0 (see http://rubyinstaller.org/downloads/)
+-   Ruby 2.1.x (last tested with 2.1.7, see
+    http://rubyinstaller.org/downloads/)
+-   Latest Ruby DevKit (see http://rubyinstaller.org/downloads/) 
 
 ### Other
 
@@ -48,9 +52,11 @@ system.
     accessible by approved personnel.
 -   Disable automatic standby, hibernate, and screen savers other than
     screen power-saving on the PC.
--   Install Ruby 2.0.0, make sure Ruby is in the path (if a new command
+-   Install Ruby 2.1.x, make sure Ruby is in the path (if a new command
     prompt is opened and `ruby -v` is typed, the response should be
-    something like `ruby 2.0.0p645 ...`
+    something like `ruby 2.1.7p123 ...`
+-   Install the Ruby DevKit, this is required to compile Ruby Gems that
+    have native extensions.
 
 ## Files
 
@@ -159,6 +165,38 @@ connection:\
     force TLS or SSL security, e.g. to force SSL, set `ssl: true, port:
     465`, and `openssl_verify_mode: peer` (to force SSL to validate the
     server certificate).
+
+## Verify Installation
+
+To verify that the Adapter is properly installed and configured, the
+various tests included with the Adapter source code can be run from a
+command prompt. Open a Windows command prompt, the type the following:
+
+```
+cd c:\adapter
+bundle exec rake -T
+```
+
+This will show the tests that are available. To do a basic set of tests
+and make sure the Adapter and Ruby Gems are properly configured, type:
+  
+```
+cd c:\adapter
+bundle exec rake test
+```
+
+The output should be something like:
+```
+149 runs, 210 assertions, 0 failures, 0 errors, 0 skips
+```
+
+If there are errors related to SQLite3, you may need to install SQLite3
+manually. See The best way to install is using the SQLite3 "autoconf"
+download (from https://www.sqlite.org/download.html) and building from
+source using Ruby DevKit. Although it is dated, the following is still
+a useful guide:
+
+http://www.skorks.com/2009/08/installing-and-using-sqlite-with-ruby-on-windows/
 
 ## Service Installation
 

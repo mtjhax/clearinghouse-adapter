@@ -24,7 +24,6 @@ GEM
       unf (>= 0.0.5, < 1.0.0)
     factory_girl (4.5.0)
       activesupport (>= 3.0.0)
-    ffi (1.9.10)
     ffi (1.9.10-x86-mingw32)
     http-cookie (1.0.2)
       domain_name (~> 0.5)
@@ -88,3 +87,6 @@ DEPENDENCIES
   vcr
   webmock
   win32-service (~> 0.8)
+
+BUNDLED WITH
+   1.10.5
