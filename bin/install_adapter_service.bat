@@ -1,2 +1,3 @@
 @echo off
-ruby lib\adapter_monitor_control.rb install
+ruby C:\adapter\lib\adapter_monitor_control.rb install
+pause

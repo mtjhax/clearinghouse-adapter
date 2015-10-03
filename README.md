@@ -200,20 +200,26 @@ http://www.skorks.com/2009/08/installing-and-using-sqlite-with-ruby-on-windows/
 
 ## Service Installation
 
--   The Adapter runs in the background as a Windows Service. To install
-    the service, type the following at the Windows command prompt:
+-   The Adapter runs in the background as a Windows Service. There is
+    a Windows batch file available in `bin\install_adapter_service.bat`
+    that can automatically install the Adapter.
+-   If the Adapter was installed in a different directory than `C:\adapter`
+    then the file must be edited to specify the alternate directory.
+-   In the past, it was possible to install the Adapter by simply
+    typing the following at the Windows command prompt:
 
 ```
 cd c:\adapter
 c:\adapter\bin\install_adapter_service
 ```
 
--   If uninstalling the Adapter, before deleting any files use:
+-   Under Windows 7 and later, this command needs to be run with
+    Administrator privileges. The easiest way to do this is to
+    right-click the file and choose "Run as administrator".
 
-```
-cd c:\adapter
-c:\adapter\bin\remove_adapter_service
-```
+-   If uninstalling the Adapter, before deleting any files use
+    the batch file, `c:\adapter\bin\remove_adapter_service.bat`.
+    This must also be run as an administrator.
 
 # Operations
 
