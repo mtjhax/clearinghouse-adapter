@@ -24,20 +24,20 @@ if ARGV[0] == "install"
   puts "Installing service..."
 
   Service.create(
-    :service_name => 'ride_clearinghouse_adapter',
+    :service_name => 'clearinghouse_adapter',
     :host => nil,
     :service_type => Service::WIN32_OWN_PROCESS,
-    :description => 'Simplifies integration with the Ride Clearinghouse web service.',
+    :description => 'Simplifies integration with the Ride Connection Clearinghouse web service.',
     :start_type => Service::AUTO_START,
     :error_control => Service::ERROR_NORMAL,
     :binary_path_name => "\"#{RUBY}\" \"#{TARGET}\"",
     :service_start_name => 'LocalSystem',
-    :display_name => 'Ride Clearinghouse Adapter'
+    :display_name => 'Clearinghouse Adapter'
   )
   puts "Done."
 elsif ARGV[0] == "remove"
   puts "Removing service..."
-  Service.delete('ride_clearinghouse_adapter')
+  Service.delete('clearinghouse_adapter')
   puts "Done."
 else
   puts "Command not recognized, use install or remove."
