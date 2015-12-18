@@ -17,6 +17,7 @@ log/*
 pkg
 rdoc
 ruby
+transfer
 spec/reports
 test/tmp
 test/version_tmp
