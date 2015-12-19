@@ -25,6 +25,7 @@ require 'active_support/core_ext/object'
 require 'active_support/core_ext/hash'
 require 'active_support/time_with_zone'
 require 'hash'
+require 'pp'
 
 require 'api_client'
 require 'active_record_connection'
@@ -135,13 +136,20 @@ class AdapterSync
     @imported_trips = import_processor.process
     
     imported_rows, skipped_rows, unposted_rows = [[], [], []]
-    @imported_trips.each do |trip_hash|
+    @imported_trips.each_with_index do |trip_hash, index|
       trip_hash = trip_hash.with_indifferent_access
       if trip_hash[:origin_trip_id].nil?
         @errors << "A trip ticket from the local system did not contain an origin_trip_id value. It will not be imported."
         skipped_rows << trip_hash
       else
-        adapter_trip = TripTicket.find_or_create_by(origin_trip_id: trip_hash[:origin_trip_id], appointment_time: Time.zone.parse(trip_hash[:appointment_time]))
+        begin
+          appointment_time = Time.zone.parse(trip_hash[:appointment_time])
+        rescue => e
+          logger.error "Could not parse appointment_time value '#{trip_hash[:appointment_time]}' for trip on file line number #{index + 2}"
+          raise e
+        end
+
+        adapter_trip = TripTicket.find_or_create_by(origin_trip_id: trip_hash[:origin_trip_id], appointment_time: appointment_time)
 
         unless adapter_trip.synced?
           api_result = post_new_trip(trip_hash)
@@ -263,7 +271,7 @@ class AdapterSync
 
   def load_config(file, additional_options = {}, environment = nil)
     config = (YAML::load(File.open(file)) || {})
-    (environment && config[environment] || config).merge(additional_options || {})
+    (environment && config[environment] || config).merge(additional_options || {}).deep_symbolize_keys
   end
 
   def report_errors(error_message, errors)
