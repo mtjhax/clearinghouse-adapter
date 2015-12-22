@@ -248,7 +248,7 @@ class AdapterSync
     begin
       @clearinghouse.post(:trip_tickets, trip_hash)
     rescue Exception => e
-      api_error "API error on POST: #{e}"
+      api_error "API error on POST: #{e}", trip_hash
     end
   end
 
@@ -260,9 +260,11 @@ class AdapterSync
     end
   end
 
-  def api_error(message)
+  def api_error(message, data = nil)
     if ENV["ADAPTER_ENV"] == 'development'
       # in development mode, don't suppress the original exception
+      logger.error message
+      logger.error data unless data.nil?
       raise
     else
       raise message
