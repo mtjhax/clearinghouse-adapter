@@ -246,7 +246,7 @@ class AdapterSync
 
   def post_new_trip(trip_hash)
     begin
-      @clearinghouse.post(:trip_tickets, trip_hash)
+      @clearinghouse.post(:trip_tickets, trip_hash, @logger)
     rescue Exception => e
       api_error "API error on POST: #{e}", trip_hash
     end

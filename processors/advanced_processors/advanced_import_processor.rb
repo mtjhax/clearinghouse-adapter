@@ -70,8 +70,10 @@ class ImportProcessor < Processor::Import::Base
   
     # import folder and process each imported row
     @import_results, trip_data = importer.from_folder(import_dir, skips)
-    logger.info "Imported #{@import_results.size} files"
-    
+
+    # log overall results
+    logger.info "Processed #{@import_results.size} files"
+    # log any files that couldn't be imported
     @import_results.each do |r|
       @errors << "An error was encountered while importing #{r[:rows]} rows from file #{r[:file_name]} at #{r[:created_at]}:\n\t#{r[:error_msg]}\nThe file has been renamed and none of its rows were imported." if r[:error]
     end    

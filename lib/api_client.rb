@@ -55,20 +55,20 @@ class ApiClient
   # arrays:         ['trip_tickets', 1, :trip_comments]
   # nested arrays:  ['trip_tickets', 1, [:trip_comments, 2]]
 
-  def get(resource, additional_params = {})
-    request(:get, resource, additional_params)
+  def get(resource, additional_params = {}, logger = nil)
+    request(:get, resource, additional_params, logger)
   end
 
-  def post(resource, additional_params)
-    request(:post, resource, additional_params)
+  def post(resource, additional_params, logger = nil)
+    request(:post, resource, additional_params, logger)
   end
 
-  def put(resource, additional_params)
-    request(:put, resource, additional_params)
+  def put(resource, additional_params, logger = nil)
+    request(:put, resource, additional_params, logger)
   end
 
-  def delete(resource)
-    request(:delete, resource)
+  def delete(resource, logger = nil)
+    request(:delete, resource, logger)
   end
 
   # allow returned objects to return attributes like a Hash
@@ -97,7 +97,7 @@ class ApiClient
 
   protected
 
-  def request(method, resource, additional_params = nil)
+  def request(method, resource, additional_params = nil, logger = nil)
     resource = flatten([@base_resource_path, resource])
     resource_name = singular_resource_name(resource)
     if method == :get
@@ -105,8 +105,13 @@ class ApiClient
     else
       params = signed_params({ resource_name => additional_params })
     end
-    result = @site[versioned(resource)].send(method, params)
-    process_result(resource, result)
+    begin
+      result = @site[versioned(resource)].send(method, params)
+      process_result(resource, result)
+    rescue => e
+      logger.error e.response if logger
+      raise e
+    end
   end
 
   def process_result(resource, result)
