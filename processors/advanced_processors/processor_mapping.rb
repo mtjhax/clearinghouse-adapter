@@ -85,6 +85,7 @@ module Processors
 
         # use sub-mapping if specified
         current_mapping = sub_mapping_key && mappings[sub_mapping_key] || mappings
+        mappings_remaining = current_mapping.dup
 
         # check mapping for :__accept_unmapped__ key indicating how to handle unmapped attributes:
         # - true/nil passes all unmapped attributes to output (this is the default behavior)
@@ -94,40 +95,51 @@ module Processors
         input_hash.each do |input_name, input_value|
           # find input attribute name in the mappings
           mapping = current_mapping[input_name]
-
-          case mapping
-            when Symbol, String
-              # if mapping is a string or symbol, use it as the output attribute name
-              assign_attribute output, mapping, input_name, input_value
-
-            when Array
-              # array indicates a nested result
-              raise "Invalid nested attribute mapping: #{mapping}" unless valid_nested_attribute?(mapping)
-              assign_attribute output, mapping, input_name, input_value
-
-            when Hash
-              # if mapping is a hash, it should contain a command to apply to input
-              mapping.each do |cmd, args|
-                process_command cmd, args, input_name, input_value, output
-              end
-
-            when true, 'true'
-              # if mapping value is accept/true, copy value to output with same attr name
-              assign_attribute output, input_name, input_name, input_value
-
-            when nil
-              # use default if unmapped
-              assign_attribute output, input_name, input_name, input_value if accept_unmapped
-
-            else
-              raise "Invalid mapping: #{input_name}: #{mapping}"
-          end
+          mappings_remaining.delete(input_name)
+          
+          map_input_value output, mapping, input_name, input_value, accept_unmapped
         end
+
+        # Include in the output any attributes not included in the input hash
+        mappings_remaining.each do |input_name, mapping|
+          map_input_value output, mapping, input_name, nil, accept_unmapped
+        end  
 
         output
       end
 
       protected
+
+      def map_input_value(output, mapping, input_name, input_value, accept_unmapped)
+        case mapping
+          when Symbol, String
+            # if mapping is a string or symbol, use it as the output attribute name
+            assign_attribute output, mapping, input_name, input_value
+
+          when Array
+            # array indicates a nested result
+            raise "Invalid nested attribute mapping: #{mapping}" unless valid_nested_attribute?(mapping)
+            assign_attribute output, mapping, input_name, input_value
+
+          when Hash
+            # if mapping is a hash, it should contain a command to apply to input
+            mapping.each do |cmd, args|
+              process_command cmd, args, input_name, input_value, output
+            end
+
+          when true, 'true'
+            # if mapping value is accept/true, copy value to output with same attr name
+            assign_attribute output, input_name, input_name, input_value
+
+          when nil
+            # use default if unmapped
+            assign_attribute output, input_name, input_name, input_value if accept_unmapped
+
+          else
+            raise "Invalid mapping: #{input_name}: #{mapping}"
+        end
+      end
+
 
       def process_command(cmd, args, input_name, input_value, output)
         case cmd.to_sym
