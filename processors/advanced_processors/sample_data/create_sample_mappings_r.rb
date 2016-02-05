@@ -21,6 +21,7 @@ SAMPLE_IMPORT_MAPPING = {
   __accept_unmapped__:                true,
   clearinghouse_trip_id:              :ch_id,
   trip_id:                            :origin_trip_id,
+  status:                             { ignore: true },
   provider:                           { ignore: true },
   customer_id:                        :origin_customer_id,
   customer_middle_initial:            :customer_middle_name,
