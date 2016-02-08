@@ -58,12 +58,13 @@ module Processors
   module AdvancedProcessors
     class ProcessorMapping
 
-      attr_accessor :mappings, :output
+      attr_accessor :mappings, :output, :logger
 
-      def initialize(mappings = nil)
+      def initialize(mappings = nil, logger = nil)
         self.mappings = mappings.is_a?(Hash) ? mappings.with_indifferent_access : load_mapping_configuration(mappings) if mappings
         self.mappings ||= {}.with_indifferent_access
         self.output = {}
+        self.logger = logger
       end
 
       def load_mapping_configuration(mapping_file)
@@ -86,6 +87,7 @@ module Processors
         # use sub-mapping if specified
         current_mapping = sub_mapping_key && mappings[sub_mapping_key] || mappings
         mappings_remaining = current_mapping.dup
+        mappings_remaining.delete(:__accept_unmapped__)
 
         # check mapping for :__accept_unmapped__ key indicating how to handle unmapped attributes:
         # - true/nil passes all unmapped attributes to output (this is the default behavior)
@@ -101,6 +103,7 @@ module Processors
         end
 
         # Include in the output any attributes not included in the input hash
+        # logger.info "Mappings remaining: #{mappings_remaining}"
         mappings_remaining.each do |input_name, mapping|
           map_input_value output, mapping, input_name, nil, accept_unmapped
         end  
@@ -247,7 +250,7 @@ module Processors
         # handle non-nested attribute names
         unless mapping.is_a?(Array)
           result = clean_result(block_given? ? yield(output[mapping]) : input_value)
-          output[mapping.to_s] = result if result && result.to_s.length > 0
+          output[mapping.to_s] = result
           return
         end
 

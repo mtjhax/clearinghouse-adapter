@@ -25,6 +25,7 @@ SAMPLE_IMPORT_MAPPING = {
   provider:                           { ignore: true },
   customer_id:                        :origin_customer_id,
   customer_middle_initial:            :customer_middle_name,
+  customer_information_withheld:      { normalizations: true: [ nil ] },
   customer_home_address_id:           { ignore: true },
   customer_home_address_type:         [ :customer_address_attributes, :address_type ],
   customer_home_telephone:            { prepend: [[ :customer_address_attributes, :phone_number ], ' ' ]},

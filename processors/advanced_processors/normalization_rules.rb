@@ -118,6 +118,8 @@ module Processors
                     s.casecmp(input_value) == 0
                   elsif s.respond_to?(:match)
                     !!s.match(input_value)
+                  elsif s.nil?
+                    input_value.nil?
                   else
                     raise "Normalization match set contains invalid entry: #{v}"
                   end
@@ -126,6 +128,8 @@ module Processors
                 v.casecmp(input_value) == 0
               when Regexp
                 !!v.match(input_value)
+              when NilClass
+                input_value.nil?
               else
                 raise "Normalization rule has invalid match set: #{v || 'nil'}"
             end

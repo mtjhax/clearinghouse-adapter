@@ -31,20 +31,28 @@ require 'sqlite3'
 require 'csv_import'
 require_relative 'imported_file'
 require_relative 'processor_mapping'
+require_relative 'normalization_rules'
 
 Time.zone = "UTC"
 
 class ImportProcessor < Processor::Import::Base
   include Processors::ProcessorHelper
 
-  attr_accessor :mapping
+  attr_accessor :mapping, :normalization_rules
 
   def initialize(logger = nil, options = {})
     super
     setup_import_database
 
     raise RuntimeError, "Mapping configuration file not specified" if options[:mapping_file].blank?
-    self.mapping = Processors::AdvancedProcessors::ProcessorMapping.new(options[:mapping_file])
+    self.mapping = Processors::AdvancedProcessors::ProcessorMapping.new(options[:mapping_file], logger)
+
+    # Normalization rules are optional
+    if options[:normalization_rules_file] || options[:normalization_rules]
+      self.normalization_rules = Processors::AdvancedProcessors::NormalizationRules.new(
+        options[:normalization_rules_file] || options[:normalization_rules]
+      )
+    end
   end
 
   def process
@@ -79,9 +87,13 @@ class ImportProcessor < Processor::Import::Base
     end    
     
     trip_data.collect do |row|
-      # does custom mapping of inputs based on mapping configuration
+      # ADVANCED PROCESSING STEP 1 - normalize data values for row
+      row = normalization_rules.normalize_inputs(row) if normalization_rules.present?
+
+      # ADVANCED PROCESSING STEP 2 - run row through export mapping
       row = mapping.map_inputs(row)
-      # then does all of the normal conversions and nesting of flattened attributes
+
+      # Finally do all of the normal conversions and nesting of flattened attributes
       handle_nested_objects!(row)
       handle_array_and_hstore_attributes!(row)
       handle_date_conversions!(row)
