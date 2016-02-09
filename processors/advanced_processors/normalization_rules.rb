@@ -36,7 +36,7 @@
 # Unmatched value action:
 # :accept   - accepts original value as-is (default)
 # :ignore   - ignores attribute and omits it from the output (not recommended)
-# :append   - append to a notes field, with optional placeholder in the original field, e.g. “See notes”.
+# :append   - append to a notes field, with optional placeholder in the original field, e.g. "See notes".
 #             uses the form: [:append, <name of attribute to append to>, <placeholder string>]
 # :replace  - replace specified field with either input value or a specified replacement value
 #             uses the form: [:replace, <name of attribute to replace>, <optional replacement value>]
