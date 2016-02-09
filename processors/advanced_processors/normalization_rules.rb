@@ -69,23 +69,18 @@ module Processors
 
         # use subset of rules if specified
         current_rules = subset_key && rules[subset_key] || rules
+        rules_remaining = current_rules.dup
 
         input_hash.each do |input_name, input_value|
           # find input attribute name in the rules
           rule = current_rules[input_name]
-          case rule
-            when nil
-              # if there is no rule for an input attribute, output it unchanged
-              assign_to_output input_name, input_value
-            when Hash
-              # rules can be expressed as a hash
-              process_rule input_name, input_value, rule[:normalizations], rule[:output_attribute], rule[:unmatched_action]
-            when Array
-              # compact rule syntax uses array: [ conversions, output_attr, unmatched_action ]
-              process_rule input_name, input_value, *rule
-            else
-              raise "Invalid normalization rule: #{input_name}: #{rule}"
-          end
+          rules_remaining.delete(input_name)
+
+          normalize_input_value rule, input_name, input_value
+        end
+
+        rules_remaining.each do |input_name, rule|
+          normalize_input_value rule, input_name, nil
         end
 
         output
@@ -93,20 +88,36 @@ module Processors
 
       protected
 
+      def normalize_input_value(rule, input_name, input_value)
+        case rule
+          when nil
+            # if there is no rule for an input attribute, output it unchanged
+            assign_to_output input_name, input_value
+          when Hash
+            # rules can be expressed as a hash
+            process_rule input_name, input_value, rule[:normalizations], rule[:output_attribute], rule[:unmatched_action]
+          when Array
+            # compact rule syntax uses array: [ conversions, output_attr, unmatched_action ]
+            process_rule input_name, input_value, *rule
+          else
+            raise "Invalid normalization rule: #{input_name}: #{rule}"
+        end
+      end
+
       def process_rule(input_name, input_value, normalizations, output_attribute = nil, unmatched_action = nil)
         # step 1 - check if there are any normalizations to apply
-        normal_value = normalized_value input_value, normalizations
+        normal_value = normalized_value(input_value, normalizations)
 
-        # step 2 - if a value to normalize was match, output normalized version to specified output
+        # step 2 - if a value to normalize was found, output normalized version to specified output
         #          input name used as default output name if output name not specified
-        assign_to_output(output_attribute.presence || input_name, normal_value) and return if normal_value
+        assign_to_output(output_attribute.presence || input_name, normal_value)
 
         # step 3 - if value was not normalized, use default action if provided
-        handle_unmatched_value input_name, input_value, output_attribute, unmatched_action
+        handle_unmatched_value input_name, input_value, output_attribute, unmatched_action if normal_value.nil?
       end
 
       def normalized_value(input_value, normalizations)
-        normalizations.select do |k, v|
+        matching_rules = normalizations.select do |k, v|
           if k == input_value
             # input is already an exact match for normal value
             true
@@ -134,7 +145,8 @@ module Processors
                 raise "Normalization rule has invalid match set: #{v || 'nil'}"
             end
           end
-        end.first.try(:first)
+        end
+        matching_rules.first.try(:first)
       end
 
       def handle_unmatched_value(input_name, input_value, output_attribute, unmatched_action)
