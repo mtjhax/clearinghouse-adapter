@@ -20,6 +20,7 @@ gem 'tzinfo-data'
 
 group :test, :development do
   gem 'rake'
+  gem 'byebug'
   gem 'minitest'
   gem 'factory_girl'
   gem 'database_cleaner'
