@@ -1,5 +1,13 @@
 ---
 :customer_information_withheld:
   :normalizations:
-    true:
+    :true:
     - 
+:timing_preference:
+  :normalization:
+    :dropoff:
+    - Dropoff
+    - drop-off
+    - Drop Off
+    :pickup:
+    - Pickup

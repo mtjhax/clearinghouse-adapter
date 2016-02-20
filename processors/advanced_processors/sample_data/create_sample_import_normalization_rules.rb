@@ -20,7 +20,13 @@ require 'yaml'
 SAMPLE_RULES = {
   customer_information_withheld: {
     normalizations: {
-      true => [ nil ]
+      false: [ nil ]
+    }
+  },
+  timing_preference: {
+    normalization: {
+      dropoff: [ 'Dropoff', 'drop-off', 'Drop Off' ],
+      pickup:  [ 'Pickup' ]
     }
   }
 }
