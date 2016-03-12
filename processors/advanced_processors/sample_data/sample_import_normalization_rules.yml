@@ -1,10 +1,10 @@
 ---
 :customer_information_withheld:
   :normalizations:
-    :true:
+    :false:
     - 
 :timing_preference:
-  :normalization:
+  :normalizations:
     :dropoff:
     - Dropoff
     - drop-off
