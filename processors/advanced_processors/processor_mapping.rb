@@ -195,8 +195,10 @@ module Processors
             attr_name = args[0]
             separator = args[1] || ','
             default_key = args[2] || 'value'
-            pair_arr = input_value.split(separator).map(&:strip).map {|str| str.split(':').map(&:strip).tap {|arr| arr.length == 1 ? arr.unshift(default_key) : arr }}
-            assign_attribute output, attr_name, input_name, Hash[pair_arr].symbolize_keys
+            unless input_value.nil?
+              pair_arr = input_value.split(separator).map(&:strip).map {|str| str.split(':').map(&:strip).tap {|arr| arr.length == 1 ? arr.unshift(default_key) : arr }}
+              assign_attribute output, attr_name, input_name, Hash[pair_arr].symbolize_keys
+            end
 
           when :key_value_merge
             raise "Invalid KEY_VALUE_MERGE arguments: #{args}" unless valid_key_value_merge_args?(args)
