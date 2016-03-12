@@ -31,7 +31,7 @@
   :customer_identifiers:
     :key_value_merge:
     - :customer_external_id
-    - ','
+    - ","
   :customer_boarding_time:
     :or: :customer_load_time
   :customer_deboarding_time:
@@ -40,11 +40,11 @@
   :customer_mobility_factors:
     :list_merge:
     - :customer_assistance_needs
-    - '|'
+    - "|"
   :customer_eligibility_factors:
     :list_merge:
     - :customer_eligibility
-    - '|'
+    - "|"
   :pick_up_location_id:
     :ignore: true
   :pick_up_location_address_type: :pickup_address_type
@@ -100,16 +100,16 @@
   :trip_funders:
     :list_merge:
     - :trip_funding_source
-    - '|'
+    - "|"
   :estimated_distance: :estimated_trip_distance
   :customer_service_animals:
     :list_merge:
     - :customer_service_animals
-    - '|'
+    - "|"
   :additional_data:
     :key_value_merge:
     - :additional_data
-    - ','
+    - ","
 :trip_result:
   :__accept_unmapped__: true
   :trip_ticket_id: :clearinghouse_trip_id

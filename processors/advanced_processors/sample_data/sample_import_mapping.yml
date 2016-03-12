@@ -1,7 +1,10 @@
 ---
 :__accept_unmapped__: true
-:clearinghouse_trip_id: :ch_id
+:clearinghouse_trip_id:
+  :ignore: true
 :trip_id: :origin_trip_id
+:status:
+  :ignore: true
 :provider:
   :ignore: true
 :customer_id: :origin_customer_id
@@ -15,12 +18,12 @@
   :prepend:
   - - :customer_address_attributes
     - :phone_number
-  - ' '
+  - " "
 :customer_home_telephone_extension:
   :append:
   - - :customer_address_attributes
     - :phone_number
-  - ' '
+  - " "
 :customer_home_common_name:
 - :customer_address_attributes
 - :common_name
@@ -52,7 +55,7 @@
 :customer_external_id:
   :key_values:
   - :customer_identifiers
-  - ','
+  - ","
   - :customer_external_id
 :customer_load_time:
   :and:
@@ -62,11 +65,11 @@
 :customer_assistance_needs:
   :list:
   - :customer_mobility_factors
-  - '|'
+  - "|"
 :customer_eligibility:
   :list:
   - :customer_eligibility_factors
-  - '|'
+  - "|"
 :pickup_address_id:
   :ignore: true
 :pickup_address_type:
@@ -76,12 +79,12 @@
   :prepend:
   - - :pick_up_location_attributes
     - :phone_number
-  - ' '
+  - " "
 :pickup_telephone_extension:
   :append:
   - - :pick_up_location_attributes
     - :phone_number
-  - ' '
+  - " "
 :pickup_common_name:
 - :pick_up_location_attributes
 - :common_name
@@ -118,12 +121,12 @@
   :prepend:
   - - :drop_off_location_attributes
     - :phone_number
-  - ' '
+  - " "
 :drop_off_telephone_extension:
   :append:
   - - :drop_off_location_attributes
     - :phone_number
-  - ' '
+  - " "
 :drop_off_common_name:
 - :drop_off_location_attributes
 - :common_name
@@ -153,13 +156,16 @@
 - :longitude
 :requested_pickup_date:
   :ignore: true
-:requested_pickup_time: true
+:requested_pickup_time:
+  :and:
+  - :requested_pickup_time
+  :or: :appointment_time
 :requested_drop_off_date:
   :ignore: true
 :requested_drop_off_time:
   :and:
   - :requested_drop_off_time
-  - :appointment_time
+  :or: :appointment_time
 :early_window: :time_window_before
 :late_window: :time_window_after
 :timing_preference: :scheduling_priority
@@ -167,7 +173,7 @@
 :trip_funding_source:
   :list:
   - :trip_funders
-  - '|'
+  - "|"
 :estimated_trip_distance: :estimated_distance
 :outcome:
 - :trip_result_attributes
