@@ -8,6 +8,7 @@
 .rvmrc
 .ruby-version
 .ruby-gemset
+.byebug_history
 config/*.yml
 coverage
 db/*.sqlite3
