@@ -19,8 +19,9 @@ require 'yaml'
 
 SAMPLE_IMPORT_MAPPING = {
   __accept_unmapped__:                true,
-  clearinghouse_trip_id:              :ch_id,
+  clearinghouse_trip_id:              { ignore: true },
   trip_id:                            :origin_trip_id,
+  status:                             { ignore: true },
   provider:                           { ignore: true },
   customer_id:                        :origin_customer_id,
   customer_middle_initial:            :customer_middle_name,
@@ -32,7 +33,7 @@ SAMPLE_IMPORT_MAPPING = {
   customer_home_address_1:            [ :customer_address_attributes, :address_1 ],
   customer_home_address_2:            [ :customer_address_attributes, :address_2 ],
   customer_home_city:                 [ :customer_address_attributes, :city ],
-  customer_home_jurisdiction:         [ :customer_address_attributes, :jurisdiction ],
+  customer_home_county:               [ :customer_address_attributes, :jurisdiction ],
   customer_home_state:                [ :customer_address_attributes, :state ],
   customer_home_zip:                  [ :customer_address_attributes, :zip ],
   customer_home_latitude:             [ :customer_address_attributes, :latitude ],
@@ -70,9 +71,13 @@ SAMPLE_IMPORT_MAPPING = {
   drop_off_latitude:                  [ :drop_off_location_attributes, :latitude ],
   drop_off_longitude:                 [ :drop_off_location_attributes, :longitude ],
   requested_pickup_date:              { ignore: true },
-  requested_pickup_time:              true,
+  requested_pickup_time:              { and: [ :requested_pickup_time ],
+                                        or:  :appointment_time 
+                                      },
   requested_drop_off_date:            { ignore: true },
-  requested_drop_off_time:            { and: [ :requested_drop_off_time, :appointment_time ]},
+  requested_drop_off_time:            { and: [ :requested_drop_off_time ],
+                                        or:  :appointment_time 
+                                      },
   early_window:                       :time_window_before,
   late_window:                        :time_window_after,
   timing_preference:                  :scheduling_priority,
@@ -174,7 +179,7 @@ SAMPLE_EXPORT_MAPPING = {
   }
 }
 
-File.open('processors/advanced_processors/sample_data/sample_import_mapping.yml', 'w') do |f|
+File.open('config\rm_import_mapping.yml', 'w') do |f|
   f.write SAMPLE_IMPORT_MAPPING.to_yaml
 end
 
