@@ -1,6 +1,7 @@
 ---
 :__accept_unmapped__: true
-:clearinghouse_trip_id: :ch_id
+:clearinghouse_trip_id:
+  :ignore: true
 :trip_id: :origin_trip_id
 :status:
   :ignore: true
@@ -124,7 +125,7 @@
 :pickup_longitude:
 - :pick_up_location_attributes
 - :longitude
-:pickup_edge_id:
+:pickup_home_edge_id:
   :key_values:
   - :additional_data
   - ","
@@ -134,7 +135,7 @@
 :drop_off_address_type:
 - :drop_off_location_attributes
 - :address_type
-:drop_off_telephone:
+:dropoff_telephone:
   :prepend:
   - - :drop_off_location_attributes
     - :phone_number
@@ -171,7 +172,7 @@
 :drop_off_longitude:
 - :drop_off_location_attributes
 - :longitude
-:drop_off_edge_id:
+:drop_off_home_edge_id:
   :key_values:
   - :additional_data
   - ","
